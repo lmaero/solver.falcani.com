@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { executeInit } from "./commands/init.js";
 import { executeDoctor } from "./commands/doctor.js";
+import { executeUninstall } from "./commands/uninstall.js";
 
 const program = new Command();
 
@@ -28,6 +29,13 @@ program
     if (!report.healthy) {
       process.exitCode = 1;
     }
+  });
+
+program
+  .command("uninstall")
+  .description("Remove solver framework files from the current project")
+  .action(async () => {
+    await executeUninstall(process.cwd());
   });
 
 program.parse();
