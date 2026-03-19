@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { executeInit } from "./commands/init.js";
 import { executeDoctor } from "./commands/doctor.js";
 import { executeUninstall } from "./commands/uninstall.js";
+import { executeUpdate } from "./commands/update.js";
 
 const program = new Command();
 
@@ -36,6 +37,22 @@ program
   .description("Remove solver framework files from the current project")
   .action(async () => {
     await executeUninstall(process.cwd());
+  });
+
+program
+  .command("update")
+  .description("Compare framework files against current templates")
+  .option("--ecosystem <type>", "Ecosystem tooling pack (ts|cpp)", "ts")
+  .action(async (options) => {
+    const diffs = await executeUpdate(process.cwd(), {
+      ecosystem: options.ecosystem,
+    });
+    const hasIssues = diffs.some(
+      (d) => d.status === "differs" || d.status === "missing",
+    );
+    if (hasIssues) {
+      process.exitCode = 1;
+    }
   });
 
 program.parse();
