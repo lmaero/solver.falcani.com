@@ -1,4 +1,4 @@
-import { readFile, readdir, stat } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 import { fileExists } from "../utils/files.js";
 
@@ -16,8 +16,14 @@ export interface ProjectData {
   dependencies: DependencyInfo[];
   devDependencies: DependencyInfo[];
   detectedFramework: string | null;
-  largeFiles: { path: string; lines: number }[];
-  approachingLargeFiles: { path: string; lines: number }[];
+  largeFiles: {
+    path: string;
+    lines: number;
+  }[];
+  approachingLargeFiles: {
+    path: string;
+    lines: number;
+  }[];
   directoryStructure: string;
   hasOpenSpec: boolean;
   hasCiConfig: boolean;
@@ -82,7 +88,9 @@ async function walkDirectory(
   projectRoot: string,
   files: string[],
 ): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = await readdir(dir, {
+    withFileTypes: true,
+  });
 
   for (const entry of entries) {
     if (EXCLUDED_DIRS.has(entry.name)) {
@@ -112,16 +120,28 @@ async function collectDirectoryTree(
     return [];
   }
 
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = await readdir(dir, {
+    withFileTypes: true,
+  });
   const nodes: DirectoryNode[] = [];
 
   for (const entry of entries) {
-    if (!entry.isDirectory() || EXCLUDED_DIRS.has(entry.name) || entry.name.startsWith(".")) {
+    if (
+      !entry.isDirectory() ||
+      EXCLUDED_DIRS.has(entry.name) ||
+      entry.name.startsWith(".")
+    ) {
       continue;
     }
 
-    const children = await collectDirectoryTree(join(dir, entry.name), depth - 1);
-    nodes.push({ name: entry.name, children });
+    const children = await collectDirectoryTree(
+      join(dir, entry.name),
+      depth - 1,
+    );
+    nodes.push({
+      children,
+      name: entry.name,
+    });
   }
 
   return nodes.sort((a, b) => a.name.localeCompare(b.name));
@@ -182,10 +202,16 @@ async function detectStructuredLoggingInFiles(
     const fullPath = join(projectRoot, relativePath);
     try {
       const content = await readFile(fullPath, "utf-8");
-      if (content.includes("from \"pino\"") || content.includes("from 'pino'") ||
-          content.includes("require(\"pino\")") || content.includes("require('pino')") ||
-          content.includes("from \"winston\"") || content.includes("from 'winston'") ||
-          content.includes("from \"bunyan\"") || content.includes("from 'bunyan'")) {
+      if (
+        content.includes('from "pino"') ||
+        content.includes("from 'pino'") ||
+        content.includes('require("pino")') ||
+        content.includes("require('pino')") ||
+        content.includes('from "winston"') ||
+        content.includes("from 'winston'") ||
+        content.includes('from "bunyan"') ||
+        content.includes("from 'bunyan'")
+      ) {
         return true;
       }
     } catch {
@@ -210,12 +236,15 @@ async function detectEnvValidationInFiles(
   return fileExists(join(projectRoot, ".env.example"));
 }
 
-async function detectErrorBoundariesInFiles(
-  files: string[],
-): Promise<boolean> {
+async function detectErrorBoundariesInFiles(files: string[]): Promise<boolean> {
   for (const relativePath of files) {
     const name = relativePath.split("/").pop() ?? "";
-    if (name === "error.tsx" || name === "error.ts" || name === "error.jsx" || name === "error.js") {
+    if (
+      name === "error.tsx" ||
+      name === "error.ts" ||
+      name === "error.jsx" ||
+      name === "error.js"
+    ) {
       return true;
     }
   }
@@ -223,16 +252,52 @@ async function detectErrorBoundariesInFiles(
 }
 
 const NODE_BUILTINS = new Set([
-  "assert", "async_hooks", "buffer", "child_process", "cluster",
-  "console", "constants", "crypto", "dgram", "diagnostics_channel",
-  "dns", "domain", "events", "fs", "http", "http2", "https",
-  "inspector", "module", "net", "os", "path", "perf_hooks",
-  "process", "punycode", "querystring", "readline", "repl",
-  "stream", "string_decoder", "sys", "timers", "tls", "trace_events",
-  "tty", "url", "util", "v8", "vm", "wasi", "worker_threads", "zlib",
+  "assert",
+  "async_hooks",
+  "buffer",
+  "child_process",
+  "cluster",
+  "console",
+  "constants",
+  "crypto",
+  "dgram",
+  "diagnostics_channel",
+  "dns",
+  "domain",
+  "events",
+  "fs",
+  "http",
+  "http2",
+  "https",
+  "inspector",
+  "module",
+  "net",
+  "os",
+  "path",
+  "perf_hooks",
+  "process",
+  "punycode",
+  "querystring",
+  "readline",
+  "repl",
+  "stream",
+  "string_decoder",
+  "sys",
+  "timers",
+  "tls",
+  "trace_events",
+  "tty",
+  "url",
+  "util",
+  "v8",
+  "vm",
+  "wasi",
+  "worker_threads",
+  "zlib",
 ]);
 
-const IMPORT_PATTERN = /(?:import\s+(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']|require\s*\(\s*["']([^"']+)["']\s*\))/g;
+const IMPORT_PATTERN =
+  /(?:import\s+(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']|require\s*\(\s*["']([^"']+)["']\s*\))/g;
 
 function extractPackageName(specifier: string): string | null {
   // Ignore relative imports
@@ -310,18 +375,23 @@ export async function detectMissingDependencies(
     // Skip files that contain import statements as string literals, not actual
     // project imports: template generators (code generation) and analysis modules
     // (pattern detection like checking for "from 'pino'" in source files)
-    if (relativePath.includes("templates/") || relativePath.includes("analysis/")) {
+    if (
+      relativePath.includes("templates/") ||
+      relativePath.includes("analysis/")
+    ) {
       continue;
     }
 
     const fullPath = join(projectRoot, relativePath);
     try {
       const content = await readFile(fullPath, "utf-8");
-      let match: RegExpExecArray | null;
-
       // Reset regex state
       IMPORT_PATTERN.lastIndex = 0;
-      while ((match = IMPORT_PATTERN.exec(content)) !== null) {
+      for (
+        let match = IMPORT_PATTERN.exec(content);
+        match !== null;
+        match = IMPORT_PATTERN.exec(content)
+      ) {
         const specifier = match[1] ?? match[2];
         const packageName = extractPackageName(specifier);
         if (packageName) {
@@ -352,8 +422,14 @@ export async function collectProjectData(
   const fileCounts: Record<string, number> = {};
   let sourceFileCount = 0;
   let testFileCount = 0;
-  const largeFiles: { path: string; lines: number }[] = [];
-  const approachingLargeFiles: { path: string; lines: number }[] = [];
+  const largeFiles: {
+    path: string;
+    lines: number;
+  }[] = [];
+  const approachingLargeFiles: {
+    path: string;
+    lines: number;
+  }[] = [];
 
   for (const relativePath of files) {
     const ext = extname(relativePath);
@@ -376,9 +452,15 @@ export async function collectProjectData(
       const fullPath = join(projectRoot, relativePath);
       const lineCount = await countFileLines(fullPath);
       if (lineCount > LARGE_FILE_THRESHOLD) {
-        largeFiles.push({ path: relativePath, lines: lineCount });
+        largeFiles.push({
+          lines: lineCount,
+          path: relativePath,
+        });
       } else if (lineCount > APPROACHING_LARGE_THRESHOLD) {
-        approachingLargeFiles.push({ path: relativePath, lines: lineCount });
+        approachingLargeFiles.push({
+          lines: lineCount,
+          path: relativePath,
+        });
       }
     }
   }
@@ -393,10 +475,16 @@ export async function collectProjectData(
     try {
       const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
       dependencies = Object.entries(packageJson.dependencies ?? {}).map(
-        ([name, version]) => ({ name, version: version as string }),
+        ([name, version]) => ({
+          name,
+          version: version as string,
+        }),
       );
       devDependencies = Object.entries(packageJson.devDependencies ?? {}).map(
-        ([name, version]) => ({ name, version: version as string }),
+        ([name, version]) => ({
+          name,
+          version: version as string,
+        }),
       );
     } catch {
       // Malformed package.json, skip
@@ -407,9 +495,10 @@ export async function collectProjectData(
 
   // Build tree-formatted directory structure
   const dirNodes = await collectDirectoryTree(projectRoot, 2);
-  const directoryStructure = dirNodes.length > 0
-    ? formatDirectoryTree(dirNodes, "")
-    : "No directories detected.";
+  const directoryStructure =
+    dirNodes.length > 0
+      ? formatDirectoryTree(dirNodes, "")
+      : "No directories detected.";
 
   const [hasOpenSpec, hasDockerfile] = await Promise.all([
     fileExists(join(projectRoot, "openspec")),
@@ -417,33 +506,37 @@ export async function collectProjectData(
   ]);
 
   const hasCiConfig = await detectCiConfig(projectRoot);
-  const hasStructuredLogging = await detectStructuredLoggingInFiles(projectRoot, files);
+  const hasStructuredLogging = await detectStructuredLoggingInFiles(
+    projectRoot,
+    files,
+  );
   const hasEnvValidation = await detectEnvValidationInFiles(projectRoot, files);
   const hasErrorBoundaries = await detectErrorBoundariesInFiles(files);
 
-  const testCoverageRatio = sourceFileCount > 0 ? testFileCount / sourceFileCount : 0;
+  const testCoverageRatio =
+    sourceFileCount > 0 ? testFileCount / sourceFileCount : 0;
   const missingDependencies = await detectMissingDependencies(projectRoot);
 
   return {
-    projectRoot,
-    fileCounts,
-    sourceFileCount,
-    testFileCount,
-    testCoverageRatio,
-    dependencies,
-    devDependencies,
-    detectedFramework,
-    largeFiles,
     approachingLargeFiles,
+    dependencies,
+    detectedFramework,
+    devDependencies,
     directoryStructure,
-    hasOpenSpec,
+    fileCounts,
     hasCiConfig,
     hasDockerfile,
-    hasTests: testFileCount > 0,
-    hasStructuredLogging,
     hasEnvValidation,
     hasErrorBoundaries,
+    hasOpenSpec,
+    hasStructuredLogging,
+    hasTests: testFileCount > 0,
+    largeFiles,
     missingDependencies,
+    projectRoot,
+    sourceFileCount,
+    testCoverageRatio,
+    testFileCount,
   };
 }
 
