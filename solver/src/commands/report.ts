@@ -25,7 +25,7 @@ export async function executeReport(
 
   const data = await collectProjectData(projectRoot);
   const auditResult = await runAuditChecks(projectRoot);
-  const markdown = generateReportTemplate(data, auditResult);
+  const markdown = await generateReportTemplate(data, auditResult);
 
   const docsDir = join(projectRoot, "docs");
   await ensureDir(docsDir);

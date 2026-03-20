@@ -90,6 +90,65 @@ async function detectConsoleViolations(
   return { count, files: [...violationFiles].sort() };
 }
 
+/**
+ * Check recent git log for conventional commit format.
+ * Returns { total, conventional } counts.
+ */
+export async function detectConventionalCommits(
+  projectRoot: string,
+): Promise<{ total: number; conventional: number; violations: string[] }> {
+  const { execSync } = await import("node:child_process");
+  try {
+    const output = execSync("git log --oneline -20 --format=%s", {
+      cwd: projectRoot,
+      encoding: "utf-8",
+      timeout: 5000,
+    });
+    const messages = output.trim().split("\n").filter(Boolean);
+    const conventionalPattern = /^(feat|fix|chore|docs|refactor|test|ci|style|perf|build|revert)(\(.+\))?!?:/;
+    const violations: string[] = [];
+    let conventional = 0;
+
+    for (const msg of messages) {
+      if (conventionalPattern.test(msg)) {
+        conventional++;
+      } else {
+        violations.push(msg);
+      }
+    }
+
+    return { total: messages.length, conventional, violations };
+  } catch {
+    return { total: 0, conventional: 0, violations: [] };
+  }
+}
+
+/**
+ * Detect if source files use schema validation (Zod, Joi, Yup, etc.)
+ */
+export async function detectInputValidation(
+  projectRoot: string,
+): Promise<boolean> {
+  const files = await walkProductionFiles(projectRoot);
+  for (const relativePath of files) {
+    if (isTestFile(relativePath) || !isSourceFile(relativePath)) {
+      continue;
+    }
+    const fullPath = join(projectRoot, relativePath);
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      if (content.includes("from \"zod\"") || content.includes("from 'zod'") ||
+          content.includes("from \"joi\"") || content.includes("from 'joi'") ||
+          content.includes("from \"yup\"") || content.includes("from 'yup'")) {
+        return true;
+      }
+    } catch {
+      // Skip
+    }
+  }
+  return false;
+}
+
 function formatScorecard(result: Omit<AuditResult, "scorecard" | "passing">): string {
   const lines: string[] = [];
 

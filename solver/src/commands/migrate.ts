@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { collectProjectData } from "../analysis/collector.js";
+import { runAuditChecks } from "../analysis/scorecard.js";
 import { generateMigrateTemplate } from "../analysis/templates.js";
 import { ensureDir } from "../utils/files.js";
 import { heading, success } from "../utils/output.js";
@@ -23,7 +24,8 @@ export async function executeMigrate(
   heading("solver migrate");
 
   const data = await collectProjectData(projectRoot);
-  const markdown = generateMigrateTemplate(data);
+  const auditResult = await runAuditChecks(projectRoot);
+  const markdown = generateMigrateTemplate(data, auditResult);
 
   const docsDir = join(projectRoot, "docs");
   await ensureDir(docsDir);

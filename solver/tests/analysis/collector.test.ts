@@ -26,7 +26,7 @@ describe("collectProjectData", () => {
     expect(data.fileCounts.css).toBe(1);
   });
 
-  it("detects package.json dependencies", async () => {
+  it("detects package.json dependencies with versions", async () => {
     await writeFile(
       join(tempDir, "package.json"),
       JSON.stringify({
@@ -35,9 +35,15 @@ describe("collectProjectData", () => {
       }),
     );
     const data = await collectProjectData(tempDir);
-    expect(data.dependencies).toContain("react");
-    expect(data.dependencies).toContain("next");
-    expect(data.devDependencies).toContain("vitest");
+    const depNames = data.dependencies.map((d) => d.name);
+    expect(depNames).toContain("react");
+    expect(depNames).toContain("next");
+    const reactDep = data.dependencies.find((d) => d.name === "react");
+    expect(reactDep?.version).toBe("^19.0.0");
+    const devDepNames = data.devDependencies.map((d) => d.name);
+    expect(devDepNames).toContain("vitest");
+    const vitestDep = data.devDependencies.find((d) => d.name === "vitest");
+    expect(vitestDep?.version).toBe("^4.0.0");
   });
 
   it("detects project framework from dependencies", async () => {
@@ -49,6 +55,12 @@ describe("collectProjectData", () => {
     );
     const data = await collectProjectData(tempDir);
     expect(data.detectedFramework).toBe("next");
+  });
+
+  it("returns empty dependency arrays for empty project", async () => {
+    const data = await collectProjectData(tempDir);
+    expect(data.dependencies).toHaveLength(0);
+    expect(data.devDependencies).toHaveLength(0);
   });
 
   it("counts test files", async () => {
@@ -108,15 +120,17 @@ describe("collectProjectData", () => {
     expect(data.hasOpenSpec).toBe(true);
   });
 
-  it("captures directory structure", async () => {
+  it("captures directory structure as tree format", async () => {
     await mkdir(join(tempDir, "src", "components"), { recursive: true });
     await mkdir(join(tempDir, "tests"), { recursive: true });
     await mkdir(join(tempDir, "docs"), { recursive: true });
     const data = await collectProjectData(tempDir);
-    expect(data.directoryStructure).toContain("src");
-    expect(data.directoryStructure).toContain("tests");
-    expect(data.directoryStructure).toContain("docs");
-    expect(data.directoryStructure).toContain("src/components");
+    expect(data.directoryStructure).toContain("src/");
+    expect(data.directoryStructure).toContain("tests/");
+    expect(data.directoryStructure).toContain("docs/");
+    expect(data.directoryStructure).toContain("components/");
+    // Verify tree formatting characters
+    expect(data.directoryStructure).toMatch(/[├└]──/);
   });
 
   it("detects test files in __tests__ directory", async () => {
