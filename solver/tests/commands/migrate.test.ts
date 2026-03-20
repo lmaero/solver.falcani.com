@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -13,14 +13,18 @@ describe("executeMigrate", () => {
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true });
+    await rm(tempDir, {
+      recursive: true,
+    });
   });
 
   it("creates a migration assessment file", async () => {
     await writeFile(
       join(tempDir, "package.json"),
       JSON.stringify({
-        dependencies: { express: "^4.0.0" },
+        dependencies: {
+          express: "^4.0.0",
+        },
       }),
     );
     const result = await executeMigrate(tempDir);
@@ -31,7 +35,10 @@ describe("executeMigrate", () => {
     await writeFile(
       join(tempDir, "package.json"),
       JSON.stringify({
-        dependencies: { express: "^4.0.0", mongoose: "^8.0.0" },
+        dependencies: {
+          express: "^4.0.0",
+          mongoose: "^8.0.0",
+        },
       }),
     );
     const result = await executeMigrate(tempDir);
@@ -44,7 +51,9 @@ describe("executeMigrate", () => {
     await writeFile(
       join(tempDir, "package.json"),
       JSON.stringify({
-        dependencies: { react: "^19.0.0" },
+        dependencies: {
+          react: "^19.0.0",
+        },
       }),
     );
     const result = await executeMigrate(tempDir);

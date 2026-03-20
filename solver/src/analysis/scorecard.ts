@@ -1,11 +1,14 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { collectProjectData } from "./collector.js";
 
 export interface AuditResult {
   consoleViolations: number;
   consoleViolationFiles: string[];
-  largeFiles: { path: string; lines: number }[];
+  largeFiles: {
+    path: string;
+    lines: number;
+  }[];
   missingDependencies: string[];
   biomeNoConsole: "active" | "missing";
   testCoverageRatio: number;
@@ -19,12 +22,29 @@ export interface AuditResult {
 const CONSOLE_PATTERN = /console\.(log|error|warn)\s*\(/g;
 
 const EXCLUDED_DIRS = new Set([
-  "node_modules", ".git", ".next", "dist", "build", "__pycache__", ".cache",
+  "node_modules",
+  ".git",
+  ".next",
+  "dist",
+  "build",
+  "__pycache__",
+  ".cache",
 ]);
 
 const SOURCE_EXTENSIONS = new Set([
-  "ts", "tsx", "js", "jsx", "mjs", "cjs",
-  "py", "cpp", "c", "h", "hpp", "rs", "go",
+  "ts",
+  "tsx",
+  "js",
+  "jsx",
+  "mjs",
+  "cjs",
+  "py",
+  "cpp",
+  "c",
+  "h",
+  "hpp",
+  "rs",
+  "go",
 ]);
 
 function isTestFile(filePath: string): boolean {
@@ -40,9 +60,14 @@ function isSourceFile(filePath: string): boolean {
   return SOURCE_EXTENSIONS.has(ext);
 }
 
-async function walkProductionFiles(dir: string, basePath = ""): Promise<string[]> {
+async function walkProductionFiles(
+  dir: string,
+  basePath = "",
+): Promise<string[]> {
   const results: string[] = [];
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = await readdir(dir, {
+    withFileTypes: true,
+  });
 
   for (const entry of entries) {
     if (EXCLUDED_DIRS.has(entry.name)) {
@@ -63,9 +88,10 @@ async function walkProductionFiles(dir: string, basePath = ""): Promise<string[]
   return results;
 }
 
-async function detectConsoleViolations(
-  projectRoot: string,
-): Promise<{ count: number; files: string[] }> {
+async function detectConsoleViolations(projectRoot: string): Promise<{
+  count: number;
+  files: string[];
+}> {
   let count = 0;
   const violationFiles = new Set<string>();
 
@@ -89,16 +115,21 @@ async function detectConsoleViolations(
     }
   }
 
-  return { count, files: [...violationFiles].sort() };
+  return {
+    count,
+    files: [...violationFiles].sort(),
+  };
 }
 
 /**
  * Check recent git log for conventional commit format.
  * Returns { total, conventional } counts.
  */
-export async function detectConventionalCommits(
-  projectRoot: string,
-): Promise<{ total: number; conventional: number; violations: string[] }> {
+export async function detectConventionalCommits(projectRoot: string): Promise<{
+  total: number;
+  conventional: number;
+  violations: string[];
+}> {
   const { execSync } = await import("node:child_process");
   try {
     const output = execSync("git log --oneline -20 --format=%s", {
@@ -107,7 +138,8 @@ export async function detectConventionalCommits(
       timeout: 5000,
     });
     const messages = output.trim().split("\n").filter(Boolean);
-    const conventionalPattern = /^(feat|fix|chore|docs|refactor|test|ci|style|perf|build|revert)(\(.+\))?!?:/;
+    const conventionalPattern =
+      /^(feat|fix|chore|docs|refactor|test|ci|style|perf|build|revert)(\(.+\))?!?:/;
     const violations: string[] = [];
     let conventional = 0;
 
@@ -119,9 +151,17 @@ export async function detectConventionalCommits(
       }
     }
 
-    return { total: messages.length, conventional, violations };
+    return {
+      conventional,
+      total: messages.length,
+      violations,
+    };
   } catch {
-    return { total: 0, conventional: 0, violations: [] };
+    return {
+      conventional: 0,
+      total: 0,
+      violations: [],
+    };
   }
 }
 
@@ -139,9 +179,14 @@ export async function detectInputValidation(
     const fullPath = join(projectRoot, relativePath);
     try {
       const content = await readFile(fullPath, "utf-8");
-      if (content.includes("from \"zod\"") || content.includes("from 'zod'") ||
-          content.includes("from \"joi\"") || content.includes("from 'joi'") ||
-          content.includes("from \"yup\"") || content.includes("from 'yup'")) {
+      if (
+        content.includes('from "zod"') ||
+        content.includes("from 'zod'") ||
+        content.includes('from "joi"') ||
+        content.includes("from 'joi'") ||
+        content.includes('from "yup"') ||
+        content.includes("from 'yup'")
+      ) {
         return true;
       }
     } catch {
@@ -151,31 +196,44 @@ export async function detectInputValidation(
   return false;
 }
 
-function formatScorecard(result: Omit<AuditResult, "scorecard" | "passing">): string {
+function formatScorecard(
+  result: Omit<AuditResult, "scorecard" | "passing">,
+): string {
   const lines: string[] = [];
 
   const consoleStatus = result.consoleViolations === 0 ? "\u2713" : "\u2717";
   const consoleLabel = "console.log in production:";
   const consoleValue = `${result.consoleViolations} violation${result.consoleViolations !== 1 ? "s" : ""}`;
-  lines.push(`${consoleLabel.padEnd(35)}${consoleValue.padEnd(20)}${consoleStatus}`);
+  lines.push(
+    `${consoleLabel.padEnd(35)}${consoleValue.padEnd(20)}${consoleStatus}`,
+  );
 
   const coveragePercent = Math.round(result.testCoverageRatio * 100);
   const coverageStatus = coveragePercent >= 50 ? "\u2713" : "\u26A0";
   const coverageLabel = "Test coverage:";
   const coverageValue = `${coveragePercent}% (${result.testFileCount}/${result.sourceFileCount})`;
-  lines.push(`${coverageLabel.padEnd(35)}${coverageValue.padEnd(20)}${coverageStatus}`);
+  lines.push(
+    `${coverageLabel.padEnd(35)}${coverageValue.padEnd(20)}${coverageStatus}`,
+  );
 
   const largeFileCount = result.largeFiles.length;
   const largeFilesStatus = largeFileCount === 0 ? "\u2713" : "\u26A0";
   const largeFilesLabel = "Files over 400 lines:";
   const largeFilesValue = `${largeFileCount}`;
-  lines.push(`${largeFilesLabel.padEnd(35)}${largeFilesValue.padEnd(20)}${largeFilesStatus}`);
+  lines.push(
+    `${largeFilesLabel.padEnd(35)}${largeFilesValue.padEnd(20)}${largeFilesStatus}`,
+  );
 
   const missingDepCount = result.missingDependencies.length;
   const missingDepStatus = missingDepCount === 0 ? "\u2713" : "\u2717";
   const missingDepLabel = "Missing dependencies:";
-  const missingDepValue = missingDepCount === 0 ? "none" : `${missingDepCount} package${missingDepCount !== 1 ? "s" : ""}`;
-  lines.push(`${missingDepLabel.padEnd(35)}${missingDepValue.padEnd(20)}${missingDepStatus}`);
+  const missingDepValue =
+    missingDepCount === 0
+      ? "none"
+      : `${missingDepCount} package${missingDepCount !== 1 ? "s" : ""}`;
+  lines.push(
+    `${missingDepLabel.padEnd(35)}${missingDepValue.padEnd(20)}${missingDepStatus}`,
+  );
 
   const biomeStatus = result.biomeNoConsole === "active" ? "\u2713" : "\u26A0";
   const biomeLabel = "Biome noConsole rule:";
@@ -185,12 +243,16 @@ function formatScorecard(result: Omit<AuditResult, "scorecard" | "passing">): st
   const openSpecStatus = result.hasOpenSpec ? "\u2713" : "\u26A0";
   const openSpecLabel = "OpenSpec initialized:";
   const openSpecValue = result.hasOpenSpec ? "yes" : "no";
-  lines.push(`${openSpecLabel.padEnd(35)}${openSpecValue.padEnd(20)}${openSpecStatus}`);
+  lines.push(
+    `${openSpecLabel.padEnd(35)}${openSpecValue.padEnd(20)}${openSpecStatus}`,
+  );
 
   return lines.join("\n");
 }
 
-export async function checkBiomeNoConsole(projectRoot: string): Promise<"active" | "missing"> {
+export async function checkBiomeNoConsole(
+  projectRoot: string,
+): Promise<"active" | "missing"> {
   const biomePath = join(projectRoot, "biome.json");
   try {
     const content = await readFile(biomePath, "utf-8");
@@ -202,7 +264,9 @@ export async function checkBiomeNoConsole(projectRoot: string): Promise<"active"
   }
 }
 
-export async function runAuditChecks(projectRoot: string): Promise<AuditResult> {
+export async function runAuditChecks(
+  projectRoot: string,
+): Promise<AuditResult> {
   const projectData = await collectProjectData(projectRoot);
 
   const [
@@ -214,23 +278,24 @@ export async function runAuditChecks(projectRoot: string): Promise<AuditResult> 
   ]);
 
   const partialResult = {
-    consoleViolations,
+    biomeNoConsole,
     consoleViolationFiles,
+    consoleViolations,
+    hasOpenSpec: projectData.hasOpenSpec,
     largeFiles: projectData.largeFiles,
     missingDependencies: projectData.missingDependencies,
-    biomeNoConsole,
-    testCoverageRatio: projectData.testCoverageRatio,
     sourceFileCount: projectData.sourceFileCount,
+    testCoverageRatio: projectData.testCoverageRatio,
     testFileCount: projectData.testFileCount,
-    hasOpenSpec: projectData.hasOpenSpec,
   };
 
   const scorecard = formatScorecard(partialResult);
-  const passing = consoleViolations === 0 && projectData.missingDependencies.length === 0;
+  const passing =
+    consoleViolations === 0 && projectData.missingDependencies.length === 0;
 
   return {
     ...partialResult,
-    scorecard,
     passing,
+    scorecard,
   };
 }

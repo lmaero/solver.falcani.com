@@ -1,14 +1,26 @@
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "../utils/files.js";
-import { success, info, heading } from "../utils/output.js";
+import { heading, info, success } from "../utils/output.js";
 
 /** Files and directories that belong to the solver framework and should be removed */
 const FRAMEWORK_TARGETS = [
-  { path: "CLAUDE.md", type: "file" as const },
-  { path: join(".claude", "hooks"), type: "directory" as const },
-  { path: join(".claude", "skills"), type: "directory" as const },
-  { path: join(".claude", "settings.json"), type: "file" as const },
+  {
+    path: "CLAUDE.md",
+    type: "file" as const,
+  },
+  {
+    path: join(".claude", "hooks"),
+    type: "directory" as const,
+  },
+  {
+    path: join(".claude", "skills"),
+    type: "directory" as const,
+  },
+  {
+    path: join(".claude", "settings.json"),
+    type: "file" as const,
+  },
 ] as const;
 
 interface UninstallResult {
@@ -34,7 +46,9 @@ export async function executeUninstall(
       continue;
     }
 
-    await rm(fullPath, { recursive: target.type === "directory" });
+    await rm(fullPath, {
+      recursive: target.type === "directory",
+    });
     success(`Removed ${target.path}`);
     removed.push(target.path);
   }
@@ -47,5 +61,8 @@ export async function executeUninstall(
     success(`Removed ${removed.length} framework target(s)`);
   }
 
-  return { removed, skipped };
+  return {
+    removed,
+    skipped,
+  };
 }

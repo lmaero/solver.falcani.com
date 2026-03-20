@@ -24,7 +24,10 @@ describe("runAuditChecks", () => {
 
   it("ignores console.log in test files", async () => {
     await mkdir(join(tempDir, "tests"), { recursive: true });
-    await writeFile(join(tempDir, "tests", "app.test.ts"), 'console.log("debug");');
+    await writeFile(
+      join(tempDir, "tests", "app.test.ts"),
+      'console.log("debug");',
+    );
     const result = await runAuditChecks(tempDir);
     expect(result.consoleViolations).toBe(0);
   });
@@ -42,7 +45,10 @@ describe("runAuditChecks", () => {
     await mkdir(join(tempDir, "tests"), { recursive: true });
     await writeFile(join(tempDir, "src", "app.ts"), "export const x = 1;");
     await writeFile(join(tempDir, "src", "util.ts"), "export const y = 2;");
-    await writeFile(join(tempDir, "tests", "app.test.ts"), "test('x', () => {});");
+    await writeFile(
+      join(tempDir, "tests", "app.test.ts"),
+      "test('x', () => {});",
+    );
     const result = await runAuditChecks(tempDir);
     expect(result.testCoverageRatio).toBeCloseTo(0.5);
   });
@@ -60,7 +66,10 @@ describe("runAuditChecks", () => {
     await mkdir(join(tempDir, "src"), { recursive: true });
     await mkdir(join(tempDir, "tests"), { recursive: true });
     await writeFile(join(tempDir, "src", "app.ts"), "export const x = 1;");
-    await writeFile(join(tempDir, "tests", "app.test.ts"), "test('x', () => {});");
+    await writeFile(
+      join(tempDir, "tests", "app.test.ts"),
+      "test('x', () => {});",
+    );
     const result = await runAuditChecks(tempDir);
     expect(result.consoleViolations).toBe(0);
     expect(result.passing).toBe(true);
@@ -123,7 +132,10 @@ describe("runAuditChecks", () => {
     );
     await writeFile(
       join(tempDir, "package.json"),
-      JSON.stringify({ dependencies: { react: "^19.0.0" }, devDependencies: {} }),
+      JSON.stringify({
+        dependencies: { react: "^19.0.0" },
+        devDependencies: {},
+      }),
     );
     const result = await runAuditChecks(tempDir);
     expect(result.missingDependencies).toHaveLength(0);

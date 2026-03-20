@@ -24,54 +24,80 @@ export async function generateReportTemplate(
   // Build patterns followed
   const patternsFollowed: string[] = [];
   if (commitCheck.total > 0 && commitCheck.conventional === commitCheck.total) {
-    patternsFollowed.push(`- **Conventional commits:** All ${commitCheck.total} recent commits follow the conventional format.`);
+    patternsFollowed.push(
+      `- **Conventional commits:** All ${commitCheck.total} recent commits follow the conventional format.`,
+    );
   } else if (commitCheck.total > 0 && commitCheck.conventional > 0) {
-    patternsFollowed.push(`- **Conventional commits:** ${commitCheck.conventional}/${commitCheck.total} recent commits follow the conventional format.`);
+    patternsFollowed.push(
+      `- **Conventional commits:** ${commitCheck.conventional}/${commitCheck.total} recent commits follow the conventional format.`,
+    );
   }
   if (data.hasStructuredLogging) {
-    patternsFollowed.push("- **Structured logging:** Detected (pino/winston/bunyan imports found).");
+    patternsFollowed.push(
+      "- **Structured logging:** Detected (pino/winston/bunyan imports found).",
+    );
   }
   if (data.hasErrorBoundaries) {
-    patternsFollowed.push("- **Error boundaries:** Detected (error.tsx/error.ts files found).");
+    patternsFollowed.push(
+      "- **Error boundaries:** Detected (error.tsx/error.ts files found).",
+    );
   }
   if (hasValidation) {
-    patternsFollowed.push("- **Input validation:** Schema validation library detected (Zod/Joi/Yup).");
+    patternsFollowed.push(
+      "- **Input validation:** Schema validation library detected (Zod/Joi/Yup).",
+    );
   }
   if (data.hasEnvValidation) {
-    patternsFollowed.push("- **Environment validation:** env.ts or .env.example detected.");
+    patternsFollowed.push(
+      "- **Environment validation:** env.ts or .env.example detected.",
+    );
   }
   if (auditResult.consoleViolations === 0) {
-    patternsFollowed.push("- **No console.log in production:** Clean — zero violations.");
+    patternsFollowed.push(
+      "- **No console.log in production:** Clean — zero violations.",
+    );
   }
 
-  const patternsFollowedStr = patternsFollowed.length > 0
-    ? patternsFollowed.join("\n")
-    : "No standard patterns were detected in the codebase.";
+  const patternsFollowedStr =
+    patternsFollowed.length > 0
+      ? patternsFollowed.join("\n")
+      : "No standard patterns were detected in the codebase.";
 
   // Build patterns violated
   const patternsViolated: string[] = [];
   if (auditResult.consoleViolations > 0) {
-    patternsViolated.push(`- **console.log in production:** ${auditResult.consoleViolations} violation${auditResult.consoleViolations !== 1 ? "s" : ""} across ${auditResult.consoleViolationFiles.length} file${auditResult.consoleViolationFiles.length !== 1 ? "s" : ""}.`);
+    patternsViolated.push(
+      `- **console.log in production:** ${auditResult.consoleViolations} violation${auditResult.consoleViolations !== 1 ? "s" : ""} across ${auditResult.consoleViolationFiles.length} file${auditResult.consoleViolationFiles.length !== 1 ? "s" : ""}.`,
+    );
   }
   if (commitCheck.total > 0 && commitCheck.violations.length > 0) {
-    patternsViolated.push(`- **Conventional commits:** ${commitCheck.violations.length} commit${commitCheck.violations.length !== 1 ? "s" : ""} do not follow the format.`);
+    patternsViolated.push(
+      `- **Conventional commits:** ${commitCheck.violations.length} commit${commitCheck.violations.length !== 1 ? "s" : ""} do not follow the format.`,
+    );
     for (const msg of commitCheck.violations.slice(0, 5)) {
       patternsViolated.push(`  - "${msg}"`);
     }
   }
   if (!data.hasStructuredLogging) {
-    patternsViolated.push("- **Structured logging:** Not detected. Production code should use a structured logger instead of console.");
+    patternsViolated.push(
+      "- **Structured logging:** Not detected. Production code should use a structured logger instead of console.",
+    );
   }
   if (!data.hasErrorBoundaries) {
-    patternsViolated.push("- **Error boundaries:** Not detected. Add error.tsx at the app root minimum.");
+    patternsViolated.push(
+      "- **Error boundaries:** Not detected. Add error.tsx at the app root minimum.",
+    );
   }
   if (!hasValidation) {
-    patternsViolated.push("- **Input validation:** No schema validation library detected. Use Zod for Server Actions and Route Handlers.");
+    patternsViolated.push(
+      "- **Input validation:** No schema validation library detected. Use Zod for Server Actions and Route Handlers.",
+    );
   }
 
-  const patternsViolatedStr = patternsViolated.length > 0
-    ? patternsViolated.join("\n")
-    : "No pattern violations detected.";
+  const patternsViolatedStr =
+    patternsViolated.length > 0
+      ? patternsViolated.join("\n")
+      : "No pattern violations detected.";
 
   return `# Solver Report — ${name}
 

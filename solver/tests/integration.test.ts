@@ -1,18 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { executeInit } from "../src/commands/init.js";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { executeAudit } from "../src/commands/audit.js";
 import { executeDoctor } from "../src/commands/doctor.js";
+import { executeInit } from "../src/commands/init.js";
+import { executeMigrate } from "../src/commands/migrate.js";
+import { executeReport } from "../src/commands/report.js";
+import { executeScan } from "../src/commands/scan.js";
 import { executeUninstall } from "../src/commands/uninstall.js";
 import { compareFrameworkFiles } from "../src/commands/update.js";
-import { executeScan } from "../src/commands/scan.js";
-import { executeAudit } from "../src/commands/audit.js";
-import { executeReport } from "../src/commands/report.js";
-import { executeMigrate } from "../src/commands/migrate.js";
-import { mkdtemp, rm, readFile, mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { fileExists } from "../src/utils/files.js";
 
-describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120_000 }, () => {
+describe("full lifecycle: init -> doctor -> update -> uninstall", {
+  timeout: 120_000,
+}, () => {
   let tempDir: string;
 
   beforeEach(async () => {
@@ -41,13 +43,27 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
     expect(await fileExists(join(tempDir, "lib", "logger.ts"))).toBe(true);
 
     // Verify hooks were created
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "post-write.sh"))).toBe(true);
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "post-test.sh"))).toBe(true);
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "session-end.sh"))).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "post-write.sh")),
+    ).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "post-test.sh")),
+    ).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "session-end.sh")),
+    ).toBe(true);
 
     // Verify skills were created
-    expect(await fileExists(join(tempDir, ".claude", "skills", "action-patterns", "SKILL.md"))).toBe(true);
-    expect(await fileExists(join(tempDir, ".claude", "skills", "logging", "SKILL.md"))).toBe(true);
+    expect(
+      await fileExists(
+        join(tempDir, ".claude", "skills", "action-patterns", "SKILL.md"),
+      ),
+    ).toBe(true);
+    expect(
+      await fileExists(
+        join(tempDir, ".claude", "skills", "logging", "SKILL.md"),
+      ),
+    ).toBe(true);
 
     // --- Doctor ---
     // OpenSpec may or may not have initialized via npx, so ensure it exists
@@ -76,7 +92,9 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
     expect(await fileExists(join(tempDir, "CLAUDE.md"))).toBe(false);
     expect(await fileExists(join(tempDir, ".claude", "hooks"))).toBe(false);
     expect(await fileExists(join(tempDir, ".claude", "skills"))).toBe(false);
-    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(false);
+    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(
+      false,
+    );
 
     // Ecosystem files are preserved (uninstall only removes framework files)
     expect(await fileExists(join(tempDir, "biome.json"))).toBe(true);
@@ -135,9 +153,12 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
   });
 
   it("solver migrate produces a migration assessment", async () => {
-    await writeFile(join(tempDir, "package.json"), JSON.stringify({
-      dependencies: { react: "^19.0.0" }
-    }));
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({
+        dependencies: { react: "^19.0.0" },
+      }),
+    );
     await mkdir(join(tempDir, "src"), { recursive: true });
     await writeFile(join(tempDir, "src", "app.ts"), "const x = 1;");
     const migrateResult = await executeMigrate(tempDir);

@@ -1,21 +1,30 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { executeDoctor } from "../../src/commands/doctor.js";
 import { executeInit } from "../../src/commands/init.js";
-import { mkdtemp, rm, unlink, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { fileExists } from "../../src/utils/files.js";
 
-describe("executeDoctor", { timeout: 60_000 }, () => {
+describe("executeDoctor", {
+  timeout: 60_000,
+}, () => {
   let tempDir: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), "solver-doctor-"));
-    await executeInit(tempDir, { ecosystem: "ts" }, false);
+    await executeInit(
+      tempDir,
+      {
+        ecosystem: "ts",
+      },
+      false,
+    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true });
+    await rm(tempDir, {
+      recursive: true,
+    });
   });
 
   it("reports all healthy after fresh init", async () => {
@@ -50,22 +59,30 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
   });
 
   it("reports missing hooks directory", async () => {
-    await rm(join(tempDir, ".claude", "hooks"), { recursive: true });
+    await rm(join(tempDir, ".claude", "hooks"), {
+      recursive: true,
+    });
     const report = await executeDoctor(tempDir);
     expect(report.hooks).toBe("missing");
     expect(report.healthy).toBe(false);
   });
 
   it("reports missing skills when skills directory is removed", async () => {
-    await rm(join(tempDir, ".claude", "skills"), { recursive: true });
+    await rm(join(tempDir, ".claude", "skills"), {
+      recursive: true,
+    });
     const report = await executeDoctor(tempDir);
     expect(report.skills).toBe("missing");
     expect(report.healthy).toBe(false);
   });
 
   it("reports incomplete skills when some skill files are missing", async () => {
-    await rm(join(tempDir, ".claude", "skills", "logging"), { recursive: true });
-    await rm(join(tempDir, ".claude", "skills", "discovery"), { recursive: true });
+    await rm(join(tempDir, ".claude", "skills", "logging"), {
+      recursive: true,
+    });
+    await rm(join(tempDir, ".claude", "skills", "discovery"), {
+      recursive: true,
+    });
     const report = await executeDoctor(tempDir);
     expect(report.skills).toBe("incomplete");
     expect(report.healthy).toBe(false);
@@ -87,7 +104,14 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
   it("reports biomeConfig misconfigured when noConsole is missing", async () => {
     await writeFile(
       join(tempDir, "biome.json"),
-      JSON.stringify({ linter: { enabled: true, rules: { recommended: true } } }),
+      JSON.stringify({
+        linter: {
+          enabled: true,
+          rules: {
+            recommended: true,
+          },
+        },
+      }),
     );
     const report = await executeDoctor(tempDir);
     expect(report.biomeConfig).toBe("misconfigured");

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { compareFrameworkFiles } from "../../src/commands/update.js";
-import { executeInit } from "../../src/commands/init.js";
-import { mkdtemp, rm, writeFile, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { executeInit } from "../../src/commands/init.js";
+import { compareFrameworkFiles } from "../../src/commands/update.js";
 
 describe("compareFrameworkFiles", { timeout: 60_000 }, () => {
   let tempDir: string;
@@ -38,7 +38,10 @@ describe("compareFrameworkFiles", { timeout: 60_000 }, () => {
   });
 
   it("detects when settings.json has been modified", async () => {
-    await writeFile(join(tempDir, ".claude", "settings.json"), '{"custom": true}');
+    await writeFile(
+      join(tempDir, ".claude", "settings.json"),
+      '{"custom": true}',
+    );
     const diffs = await compareFrameworkFiles(tempDir, "ts");
     const settingsDiff = diffs.find((d) => d.file === ".claude/settings.json");
     expect(settingsDiff?.status).toBe("differs");

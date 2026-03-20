@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { executeInit } from "../../src/commands/init.js";
-import { mkdtemp, rm, readFile, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { executeInit } from "../../src/commands/init.js";
 import { fileExists } from "../../src/utils/files.js";
 
 describe("executeInit", { timeout: 60_000 }, () => {
@@ -23,14 +23,22 @@ describe("executeInit", { timeout: 60_000 }, () => {
 
   it("creates .claude/settings.json", async () => {
     await executeInit(tempDir, { ecosystem: "ts" }, false);
-    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(true);
+    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(
+      true,
+    );
   });
 
   it("creates .claude/hooks directory with 3 hooks", async () => {
     await executeInit(tempDir, { ecosystem: "ts" }, false);
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "post-write.sh"))).toBe(true);
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "post-test.sh"))).toBe(true);
-    expect(await fileExists(join(tempDir, ".claude", "hooks", "session-end.sh"))).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "post-write.sh")),
+    ).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "post-test.sh")),
+    ).toBe(true);
+    expect(
+      await fileExists(join(tempDir, ".claude", "hooks", "session-end.sh")),
+    ).toBe(true);
   });
 
   it("creates biome.json for ts ecosystem", async () => {
@@ -50,7 +58,9 @@ describe("executeInit", { timeout: 60_000 }, () => {
 
   it("creates docs/solver-ts-recommendations.md for ts ecosystem", async () => {
     await executeInit(tempDir, { ecosystem: "ts" }, false);
-    expect(await fileExists(join(tempDir, "docs", "solver-ts-recommendations.md"))).toBe(true);
+    expect(
+      await fileExists(join(tempDir, "docs", "solver-ts-recommendations.md")),
+    ).toBe(true);
   });
 
   it("skips OpenSpec init if openspec/ exists", async () => {
@@ -68,11 +78,11 @@ describe("executeInit", { timeout: 60_000 }, () => {
   it("merges into existing biome.json", async () => {
     await writeFile(
       join(tempDir, "biome.json"),
-      JSON.stringify({ formatter: { indentWidth: 4 } })
+      JSON.stringify({ formatter: { indentWidth: 4 } }),
     );
     await executeInit(tempDir, { ecosystem: "ts" }, false);
     const content = JSON.parse(
-      await readFile(join(tempDir, "biome.json"), "utf-8")
+      await readFile(join(tempDir, "biome.json"), "utf-8"),
     );
     expect(content.formatter.indentWidth).toBe(4);
     expect(content.linter.rules.suspicious.noConsole).toBe("error");

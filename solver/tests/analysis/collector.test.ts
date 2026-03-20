@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { collectProjectData, detectMissingDependencies } from "../../src/analysis/collector.js";
+import {
+  collectProjectData,
+  detectMissingDependencies,
+} from "../../src/analysis/collector.js";
 
 describe("collectProjectData", () => {
   let tempDir: string;
@@ -18,7 +21,10 @@ describe("collectProjectData", () => {
   it("counts source files by extension", async () => {
     await mkdir(join(tempDir, "src"), { recursive: true });
     await writeFile(join(tempDir, "src", "index.ts"), "const x = 1;");
-    await writeFile(join(tempDir, "src", "app.tsx"), "export default () => null;");
+    await writeFile(
+      join(tempDir, "src", "app.tsx"),
+      "export default () => null;",
+    );
     await writeFile(join(tempDir, "src", "style.css"), "body {}");
     const data = await collectProjectData(tempDir);
     expect(data.fileCounts.ts).toBe(1);
@@ -67,8 +73,14 @@ describe("collectProjectData", () => {
     await mkdir(join(tempDir, "src"), { recursive: true });
     await mkdir(join(tempDir, "tests"), { recursive: true });
     await writeFile(join(tempDir, "src", "app.ts"), "const x = 1;");
-    await writeFile(join(tempDir, "tests", "app.test.ts"), "test('x', () => {});");
-    await writeFile(join(tempDir, "src", "util.spec.ts"), "test('y', () => {});");
+    await writeFile(
+      join(tempDir, "tests", "app.test.ts"),
+      "test('x', () => {});",
+    );
+    await writeFile(
+      join(tempDir, "src", "util.spec.ts"),
+      "test('y', () => {});",
+    );
     const data = await collectProjectData(tempDir);
     expect(data.testFileCount).toBe(2);
     expect(data.sourceFileCount).toBeGreaterThanOrEqual(1);
@@ -93,7 +105,10 @@ describe("collectProjectData", () => {
 
   it("excludes node_modules from file counts", async () => {
     await mkdir(join(tempDir, "node_modules", "pkg"), { recursive: true });
-    await writeFile(join(tempDir, "node_modules", "pkg", "index.ts"), "const x = 1;");
+    await writeFile(
+      join(tempDir, "node_modules", "pkg", "index.ts"),
+      "const x = 1;",
+    );
     await mkdir(join(tempDir, "src"), { recursive: true });
     await writeFile(join(tempDir, "src", "app.ts"), "const x = 1;");
     const data = await collectProjectData(tempDir);
@@ -103,7 +118,10 @@ describe("collectProjectData", () => {
 
   it("detects CI config", async () => {
     await mkdir(join(tempDir, ".github", "workflows"), { recursive: true });
-    await writeFile(join(tempDir, ".github", "workflows", "ci.yml"), "name: CI");
+    await writeFile(
+      join(tempDir, ".github", "workflows", "ci.yml"),
+      "name: CI",
+    );
     const data = await collectProjectData(tempDir);
     expect(data.hasCiConfig).toBe(true);
   });
@@ -135,7 +153,10 @@ describe("collectProjectData", () => {
 
   it("detects test files in __tests__ directory", async () => {
     await mkdir(join(tempDir, "src", "__tests__"), { recursive: true });
-    await writeFile(join(tempDir, "src", "__tests__", "helper.ts"), "test('z', () => {});");
+    await writeFile(
+      join(tempDir, "src", "__tests__", "helper.ts"),
+      "test('z', () => {});",
+    );
     const data = await collectProjectData(tempDir);
     expect(data.testFileCount).toBe(1);
   });
@@ -145,7 +166,10 @@ describe("collectProjectData", () => {
     await mkdir(join(tempDir, "tests"), { recursive: true });
     await writeFile(join(tempDir, "src", "a.ts"), "export const a = 1;");
     await writeFile(join(tempDir, "src", "b.ts"), "export const b = 2;");
-    await writeFile(join(tempDir, "tests", "a.test.ts"), "test('a', () => {});");
+    await writeFile(
+      join(tempDir, "tests", "a.test.ts"),
+      "test('a', () => {});",
+    );
     const data = await collectProjectData(tempDir);
     expect(data.testCoverageRatio).toBeCloseTo(0.5);
   });

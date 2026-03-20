@@ -1,8 +1,8 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fileExists } from "../utils/files.js";
-import { success, warn, error, heading } from "../utils/output.js";
 import { getAllSkillGenerators } from "../templates/skills/index.js";
+import { fileExists } from "../utils/files.js";
+import { error, heading, success, warn } from "../utils/output.js";
 
 export interface DoctorReport {
   claudeMd: "ok" | "missing";
@@ -15,18 +15,20 @@ export interface DoctorReport {
   healthy: boolean;
 }
 
-export async function executeDoctor(projectRoot: string): Promise<DoctorReport> {
+export async function executeDoctor(
+  projectRoot: string,
+): Promise<DoctorReport> {
   heading("solver doctor");
 
   const report: DoctorReport = {
-    claudeMd: "missing",
-    settings: "missing",
-    hooks: "missing",
-    skills: "missing",
     biome: "missing",
     biomeConfig: "missing",
-    openspec: "missing",
+    claudeMd: "missing",
     healthy: false,
+    hooks: "missing",
+    openspec: "missing",
+    settings: "missing",
+    skills: "missing",
   };
 
   // 1. Check CLAUDE.md
@@ -47,7 +49,9 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
       success(".claude/settings.json is valid");
     } catch {
       report.settings = "invalid";
-      error(".claude/settings.json contains invalid JSON — delete and run `solver init`");
+      error(
+        ".claude/settings.json contains invalid JSON — delete and run `solver init`",
+      );
     }
   } else {
     warn(".claude/settings.json is missing — run `solver init` to create it");
@@ -117,7 +121,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
         success("biome.json noConsole rule is active");
       } else {
         report.biomeConfig = "misconfigured";
-        warn("biome.json noConsole rule is missing or not set to \"error\"");
+        warn('biome.json noConsole rule is missing or not set to "error"');
       }
     } catch {
       report.biomeConfig = "misconfigured";

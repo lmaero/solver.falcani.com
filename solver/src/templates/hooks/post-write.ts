@@ -1,8 +1,8 @@
 import type { Ecosystem } from "../../types.js";
 
 const LINTER_COMMANDS: Record<Ecosystem, string> = {
-  ts: "pnpm biome check --write",
   cpp: "clang-format -i",
+  ts: "pnpm biome check --write",
 };
 
 export function generatePostWriteHook(ecosystem: Ecosystem): string {

@@ -1,8 +1,8 @@
 import { writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { collectProjectData } from "../analysis/collector.js";
-import { runAuditChecks } from "../analysis/scorecard.js";
 import { generateScanTemplate } from "../analysis/scan-template.js";
+import { runAuditChecks } from "../analysis/scorecard.js";
 import { ensureDir } from "../utils/files.js";
 import { heading, success } from "../utils/output.js";
 
@@ -34,5 +34,7 @@ export async function executeScan(projectRoot: string): Promise<ScanResult> {
 
   success(`scan report written to docs/${filename}`);
 
-  return { reportPath };
+  return {
+    reportPath,
+  };
 }

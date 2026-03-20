@@ -1,13 +1,13 @@
 import type { Ecosystem } from "../../types.js";
 
 const TEST_RUNNERS: Record<Ecosystem, string> = {
-  ts: "pnpm vitest run",
   cpp: "ctest --test-dir build",
+  ts: "pnpm vitest run",
 };
 
 const TEST_PATTERNS: Record<Ecosystem, string> = {
-  ts: "\\.(test|spec)\\.(ts|tsx|js|jsx)$",
   cpp: "_(test|spec)\\.cpp$",
+  ts: "\\.(test|spec)\\.(ts|tsx|js|jsx)$",
 };
 
 export function generatePostTestHook(ecosystem: Ecosystem): string {

@@ -1,26 +1,26 @@
+import { execFile } from "node:child_process";
 import { chmod } from "node:fs/promises";
 import { join } from "node:path";
-import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { generateClaudeMd } from "../templates/claude-md.js";
+import { generateBiomeJson } from "../templates/ecosystem/typescript/biome-json.js";
+import { generateLoggerModule } from "../templates/ecosystem/typescript/logger.js";
+import { generateVitestConfig } from "../templates/ecosystem/typescript/vitest-config.js";
+import { generatePostTestHook } from "../templates/hooks/post-test.js";
+import { generatePostWriteHook } from "../templates/hooks/post-write.js";
+import { generateSessionEndHook } from "../templates/hooks/session-end.js";
+import { generateRecommendations } from "../templates/recommendations.js";
+import { generateSettingsJson } from "../templates/settings-json.js";
+import { getAllSkillGenerators } from "../templates/skills/index.js";
 import type { Ecosystem, InitOptions } from "../types.js";
 import { detectProjectState } from "../utils/detect.js";
 import {
-  writeFileIfNotExists,
-  overwriteFile,
-  mergeJsonFile,
   ensureDir,
+  mergeJsonFile,
+  overwriteFile,
+  writeFileIfNotExists,
 } from "../utils/files.js";
-import { success, warn, info, heading, confirm } from "../utils/output.js";
-import { generateClaudeMd } from "../templates/claude-md.js";
-import { generateSettingsJson } from "../templates/settings-json.js";
-import { generatePostWriteHook } from "../templates/hooks/post-write.js";
-import { generatePostTestHook } from "../templates/hooks/post-test.js";
-import { generateSessionEndHook } from "../templates/hooks/session-end.js";
-import { generateBiomeJson } from "../templates/ecosystem/typescript/biome-json.js";
-import { generateVitestConfig } from "../templates/ecosystem/typescript/vitest-config.js";
-import { generateLoggerModule } from "../templates/ecosystem/typescript/logger.js";
-import { generateRecommendations } from "../templates/recommendations.js";
-import { getAllSkillGenerators } from "../templates/skills/index.js";
+import { confirm, heading, info, success, warn } from "../utils/output.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -66,7 +66,9 @@ async function writeOrPrompt(
     return "kept";
   }
 
-  warn(`${displayName} already exists with different content — keeping existing`);
+  warn(
+    `${displayName} already exists with different content — keeping existing`,
+  );
   conflicts.push(displayName);
   return "kept";
 }
@@ -149,7 +151,13 @@ export async function executeInit(
 
   // 5. Ecosystem-specific files
   if (ecosystem === "ts") {
-    await scaffoldTypeScriptEcosystem(projectRoot, state.hasBiomeJson, conflicts, overwritten, interactive);
+    await scaffoldTypeScriptEcosystem(
+      projectRoot,
+      state.hasBiomeJson,
+      conflicts,
+      overwritten,
+      interactive,
+    );
   }
 
   // 6. OpenSpec init
@@ -244,7 +252,9 @@ async function initOpenSpec(
     success("OpenSpec initialized");
     return false;
   } catch {
-    warn("OpenSpec init failed — you can run it manually: npx @fission-ai/openspec@latest init");
+    warn(
+      "OpenSpec init failed — you can run it manually: npx @fission-ai/openspec@latest init",
+    );
     return false;
   }
 }

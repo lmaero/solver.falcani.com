@@ -16,44 +16,44 @@ export interface SkillGenerator {
 export function getAllSkillGenerators(): SkillGenerator[] {
   return [
     {
-      name: "action-patterns",
       dirName: "action-patterns",
       generate: generateActionPatterns,
+      name: "action-patterns",
     },
     {
-      name: "data-access-patterns",
       dirName: "data-access-patterns",
       generate: generateDataAccessPatterns,
+      name: "data-access-patterns",
     },
     {
-      name: "env-validation",
       dirName: "env-validation",
       generate: generateEnvValidation,
+      name: "env-validation",
     },
     {
-      name: "logging",
       dirName: "logging",
       generate: generateLogging,
+      name: "logging",
     },
     {
-      name: "ci-cd-patterns",
       dirName: "ci-cd-patterns",
       generate: generateCiCdPatterns,
+      name: "ci-cd-patterns",
     },
     {
-      name: "discovery",
       dirName: "discovery",
       generate: generateDiscovery,
+      name: "discovery",
     },
     {
-      name: "domain-patterns",
       dirName: "domain-patterns",
       generate: generateDomainPatterns,
+      name: "domain-patterns",
     },
     {
-      name: "testing-strategy",
       dirName: "testing-strategy",
       generate: generateTestingStrategy,
+      name: "testing-strategy",
     },
   ];
 }

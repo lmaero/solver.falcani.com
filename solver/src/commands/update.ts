@@ -1,14 +1,14 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { generateClaudeMd } from "../templates/claude-md.js";
+import { generatePostTestHook } from "../templates/hooks/post-test.js";
+import { generatePostWriteHook } from "../templates/hooks/post-write.js";
+import { generateSessionEndHook } from "../templates/hooks/session-end.js";
+import { generateSettingsJson } from "../templates/settings-json.js";
+import { getAllSkillGenerators } from "../templates/skills/index.js";
 import type { Ecosystem } from "../types.js";
 import { fileExists } from "../utils/files.js";
-import { success, warn, info, heading, error } from "../utils/output.js";
-import { generateClaudeMd } from "../templates/claude-md.js";
-import { generateSettingsJson } from "../templates/settings-json.js";
-import { generatePostWriteHook } from "../templates/hooks/post-write.js";
-import { generatePostTestHook } from "../templates/hooks/post-test.js";
-import { generateSessionEndHook } from "../templates/hooks/session-end.js";
-import { getAllSkillGenerators } from "../templates/skills/index.js";
+import { error, heading, info, success, warn } from "../utils/output.js";
 
 export interface FileDiff {
   file: string;
@@ -30,24 +30,33 @@ export async function compareFrameworkFiles(
   ecosystem: Ecosystem,
 ): Promise<FileDiff[]> {
   const skillFiles = getAllSkillGenerators().map(({ dirName, generate }) => ({
-    relativePath: `.claude/skills/${dirName}/SKILL.md`,
     generate,
+    relativePath: `.claude/skills/${dirName}/SKILL.md`,
   }));
 
-  const frameworkFiles: Array<{ relativePath: string; generate: () => string }> = [
-    { relativePath: "CLAUDE.md", generate: generateClaudeMd },
-    { relativePath: ".claude/settings.json", generate: generateSettingsJson },
+  const frameworkFiles: Array<{
+    relativePath: string;
+    generate: () => string;
+  }> = [
     {
-      relativePath: ".claude/hooks/post-write.sh",
+      generate: generateClaudeMd,
+      relativePath: "CLAUDE.md",
+    },
+    {
+      generate: generateSettingsJson,
+      relativePath: ".claude/settings.json",
+    },
+    {
       generate: () => generatePostWriteHook(ecosystem),
+      relativePath: ".claude/hooks/post-write.sh",
     },
     {
-      relativePath: ".claude/hooks/post-test.sh",
       generate: () => generatePostTestHook(ecosystem),
+      relativePath: ".claude/hooks/post-test.sh",
     },
     {
-      relativePath: ".claude/hooks/session-end.sh",
       generate: () => generateSessionEndHook(ecosystem),
+      relativePath: ".claude/hooks/session-end.sh",
     },
     ...skillFiles,
   ];
@@ -59,16 +68,28 @@ export async function compareFrameworkFiles(
     const expected = generate();
 
     if (!(await fileExists(fullPath))) {
-      diffs.push({ file: relativePath, status: "missing", expected });
+      diffs.push({
+        expected,
+        file: relativePath,
+        status: "missing",
+      });
       continue;
     }
 
     const current = await readFile(fullPath, "utf-8");
 
     if (current === expected) {
-      diffs.push({ file: relativePath, status: "up-to-date" });
+      diffs.push({
+        file: relativePath,
+        status: "up-to-date",
+      });
     } else {
-      diffs.push({ file: relativePath, status: "differs", current, expected });
+      diffs.push({
+        current,
+        expected,
+        file: relativePath,
+        status: "differs",
+      });
     }
   }
 

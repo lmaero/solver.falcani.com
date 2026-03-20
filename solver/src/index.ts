@@ -23,7 +23,9 @@ program
   .description("Scaffold solver framework into the current project")
   .option("--ecosystem <type>", "Ecosystem tooling pack (ts|cpp)", "ts")
   .action(async (options) => {
-    await executeInit(process.cwd(), { ecosystem: options.ecosystem });
+    await executeInit(process.cwd(), {
+      ecosystem: options.ecosystem,
+    });
   });
 
 program

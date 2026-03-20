@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  type SkillGenerator,
   getAllSkillGenerators,
+  type SkillGenerator,
 } from "../../../src/templates/skills/index.js";
 
 describe("skill generators", () => {

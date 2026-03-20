@@ -1,8 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { collectProjectData } from "../analysis/collector.js";
-import { runAuditChecks } from "../analysis/scorecard.js";
 import { generateMigrateTemplate } from "../analysis/migrate-template.js";
+import { runAuditChecks } from "../analysis/scorecard.js";
 import { ensureDir } from "../utils/files.js";
 import { heading, success } from "../utils/output.js";
 
@@ -36,5 +36,7 @@ export async function executeMigrate(
 
   success(`migration assessment written to docs/${filename}`);
 
-  return { reportPath };
+  return {
+    reportPath,
+  };
 }

@@ -15,10 +15,10 @@ export async function detectProjectState(
     ]);
 
   return {
-    hasClaudeMd,
-    hasClaudeDir,
-    hasOpenSpec,
     hasBiomeJson,
+    hasClaudeDir,
+    hasClaudeMd,
+    hasOpenSpec,
     hasPackageJson,
     projectRoot,
   };

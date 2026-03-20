@@ -13,16 +13,22 @@ export async function writeFileIfNotExists(
   try {
     const existing = await readFile(filePath, "utf-8");
     if (existing === content) {
-      return { action: "skipped" };
+      return {
+        action: "skipped",
+      };
     }
     return {
       action: "conflict",
       diff: `Existing file differs. Current: ${existing.length} chars, New: ${content.length} chars`,
     };
   } catch {
-    await mkdir(dirname(filePath), { recursive: true });
+    await mkdir(dirname(filePath), {
+      recursive: true,
+    });
     await writeFile(filePath, content);
-    return { action: "created" };
+    return {
+      action: "created",
+    };
   }
 }
 
@@ -30,9 +36,13 @@ export async function overwriteFile(
   filePath: string,
   content: string,
 ): Promise<FileResult> {
-  await mkdir(dirname(filePath), { recursive: true });
+  await mkdir(dirname(filePath), {
+    recursive: true,
+  });
   await writeFile(filePath, content);
-  return { action: "overwritten" };
+  return {
+    action: "overwritten",
+  };
 }
 
 export async function mergeJsonFile(
@@ -43,11 +53,17 @@ export async function mergeJsonFile(
     const existing = JSON.parse(await readFile(filePath, "utf-8"));
     const merged = deepMerge(existing, newData);
     await writeFile(filePath, JSON.stringify(merged, null, 2));
-    return { action: "merged" };
+    return {
+      action: "merged",
+    };
   } catch {
-    await mkdir(dirname(filePath), { recursive: true });
+    await mkdir(dirname(filePath), {
+      recursive: true,
+    });
     await writeFile(filePath, JSON.stringify(newData, null, 2));
-    return { action: "created" };
+    return {
+      action: "created",
+    };
   }
 }
 
@@ -61,14 +77,18 @@ export async function fileExists(filePath: string): Promise<boolean> {
 }
 
 export async function ensureDir(dirPath: string): Promise<void> {
-  await mkdir(dirPath, { recursive: true });
+  await mkdir(dirPath, {
+    recursive: true,
+  });
 }
 
 function deepMerge(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result = { ...target };
+  const result = {
+    ...target,
+  };
   for (const key of Object.keys(source)) {
     if (
       typeof source[key] === "object" &&

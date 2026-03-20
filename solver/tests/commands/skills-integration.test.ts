@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { executeInit } from "../../src/commands/init.js";
-import { mkdtemp, rm, readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { executeInit } from "../../src/commands/init.js";
 
 describe("skills integration", { timeout: 60_000 }, () => {
   let tempDir: string;

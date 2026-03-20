@@ -1,12 +1,7 @@
-import {
-  type AuditResult,
-  runAuditChecks,
-} from "../analysis/scorecard.js";
-import { heading, success, error } from "../utils/output.js";
+import { type AuditResult, runAuditChecks } from "../analysis/scorecard.js";
+import { error, heading, success } from "../utils/output.js";
 
-export async function executeAudit(
-  projectRoot: string,
-): Promise<AuditResult> {
+export async function executeAudit(projectRoot: string): Promise<AuditResult> {
   heading("solver audit");
 
   const result = await runAuditChecks(projectRoot);

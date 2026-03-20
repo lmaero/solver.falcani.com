@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { executeUninstall } from "../../src/commands/uninstall.js";
-import { executeInit } from "../../src/commands/init.js";
-import { mkdtemp, rm, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { executeInit } from "../../src/commands/init.js";
+import { executeUninstall } from "../../src/commands/uninstall.js";
 import { fileExists } from "../../src/utils/files.js";
 
 describe("executeUninstall", { timeout: 60_000 }, () => {
@@ -35,7 +35,9 @@ describe("executeUninstall", { timeout: 60_000 }, () => {
 
   it("removes .claude/settings.json", async () => {
     await executeUninstall(tempDir);
-    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(false);
+    expect(await fileExists(join(tempDir, ".claude", "settings.json"))).toBe(
+      false,
+    );
   });
 
   it("keeps project source code untouched", async () => {
@@ -53,6 +55,8 @@ describe("executeUninstall", { timeout: 60_000 }, () => {
     await mkdir(join(tempDir, "openspec"), { recursive: true });
     await writeFile(join(tempDir, "openspec", "config.yaml"), "test");
     await executeUninstall(tempDir);
-    expect(await fileExists(join(tempDir, "openspec", "config.yaml"))).toBe(true);
+    expect(await fileExists(join(tempDir, "openspec", "config.yaml"))).toBe(
+      true,
+    );
   });
 });

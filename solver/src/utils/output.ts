@@ -1,5 +1,5 @@
-import chalk from "chalk";
 import { createInterface } from "node:readline";
+import chalk from "chalk";
 
 export function success(message: string): void {
   process.stdout.write(`${chalk.green("\u2713")} ${message}\n`);
@@ -22,11 +22,17 @@ export function heading(message: string): void {
 }
 
 export async function confirm(message: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   return new Promise((resolve) => {
-    rl.question(`${chalk.yellow("?")} ${message} ${chalk.dim("(y/n)")} `, (answer) => {
-      rl.close();
-      resolve(answer.trim().toLowerCase() === "y");
-    });
+    rl.question(
+      `${chalk.yellow("?")} ${message} ${chalk.dim("(y/n)")} `,
+      (answer) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() === "y");
+      },
+    );
   });
 }
