@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { collectProjectData } from "../analysis/collector.js";
 import { runAuditChecks } from "../analysis/scorecard.js";
-import { generateScanTemplate } from "../analysis/templates.js";
+import { generateScanTemplate } from "../analysis/scan-template.js";
 import { ensureDir } from "../utils/files.js";
 import { heading, success } from "../utils/output.js";
 
