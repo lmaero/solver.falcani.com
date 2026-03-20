@@ -112,6 +112,18 @@ Variables containing secrets (API keys, tokens, passwords) get extra treatment:
 - Never commit them to version control
 - Mark them in the schema documentation as sensitive
 
+## Lazy validation for scripts and tools
+
+The default pattern validates eagerly at module load — the app crashes if any env var is missing. This is correct for the main application.
+
+For standalone scripts (seed scripts, migrations, CLI tools) that only need a subset of env vars, use a lazy pattern:
+
+- Create a separate schema for the script's needs (e.g., \`seedEnvSchema\` with only \`DATABASE_URL\`)
+- Or use \`.partial()\` on the main schema and validate only what you need
+- Never import the main \`env.ts\` in scripts that don't need all variables
+
+The principle remains: validate at startup, crash if invalid. But "startup" means the script's startup, and "invalid" means the vars the script actually needs.
+
 ## Checklist
 
 - [ ] Environment schema validates all variables at startup
@@ -120,5 +132,6 @@ Variables containing secrets (API keys, tokens, passwords) get extra treatment:
 - [ ] \`.env.example\` documents every variable with comments and example values
 - [ ] Type coercion and defaults are handled in the schema, not at consumption sites
 - [ ] Sensitive variables are never logged or committed
+- [ ] Standalone scripts use a separate or partial schema — never import the main env.ts
 `;
 }

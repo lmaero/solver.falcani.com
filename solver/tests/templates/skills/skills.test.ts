@@ -148,6 +148,12 @@ describe("env-validation skill", () => {
     expect(content).toContain(".env.example");
   });
 
+  it("covers lazy validation for scripts and tools", () => {
+    expect(content).toContain("lazy");
+    expect(content).toContain("standalone scripts");
+    expect(content).toContain(".partial()");
+  });
+
   it("does NOT reference specific schema libraries", () => {
     expect(content).not.toContain("Zod");
     expect(content).not.toContain("Valibot");
@@ -330,5 +336,12 @@ describe("testing-strategy skill", () => {
     expect(content).toContain("behavior");
     expect(content).toContain("mock");
     expect(content).toContain("boundar");
+  });
+
+  it("covers visual verification after refactoring", () => {
+    expect(content).toContain("visual verification");
+    expect(content).toContain("splitting components");
+    expect(content).toContain("desktop and mobile");
+    expect(content).toContain("visual regression");
   });
 });
