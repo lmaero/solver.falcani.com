@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { executeInit } from "./commands/init.js";
+import { executeAudit } from "./commands/audit.js";
 import { executeDoctor } from "./commands/doctor.js";
+import { executeInit } from "./commands/init.js";
+import { executeMigrate } from "./commands/migrate.js";
+import { executeReport } from "./commands/report.js";
+import { executeScan } from "./commands/scan.js";
 import { executeUninstall } from "./commands/uninstall.js";
 import { executeUpdate } from "./commands/update.js";
 
@@ -53,6 +57,34 @@ program
     if (hasIssues) {
       process.exitCode = 1;
     }
+  });
+
+program
+  .command("audit")
+  .description("Run phase completion checks and display scorecard")
+  .action(async () => {
+    await executeAudit(process.cwd());
+  });
+
+program
+  .command("scan")
+  .description("Analyze codebase and generate scan report")
+  .action(async () => {
+    await executeScan(process.cwd());
+  });
+
+program
+  .command("report")
+  .description("Generate a structured field report")
+  .action(async () => {
+    await executeReport(process.cwd());
+  });
+
+program
+  .command("migrate")
+  .description("Generate migration assessment for existing codebase")
+  .action(async () => {
+    await executeMigrate(process.cwd());
   });
 
 program.parse();
