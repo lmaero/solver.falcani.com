@@ -1,24 +1,32 @@
 export function generateBiomeJson(): Record<string, unknown> {
   return {
-    $schema: "https://biomejs.dev/schemas/2.0.0/schema.json",
-    organizeImports: {
+    $schema: 'node_modules/@biomejs/biome/configuration_schema.json',
+    assist: {
+      actions: {
+        source: {
+          organizeImports: 'on',
+        },
+      },
+    },
+    files: {
+      includes: [
+        'src/**',
+        'tests/**',
+      ],
+    },
+    formatter: {
       enabled: true,
+      indentStyle: 'space',
+      indentWidth: 2,
     },
     linter: {
       enabled: true,
       rules: {
         recommended: true,
         suspicious: {
-          noConsole: "error",
+          noConsole: 'error',
         },
       },
     },
-    formatter: {
-      enabled: true,
-    },
-  };
-}
-
-export function generateBiomeJsonString(): string {
-  return JSON.stringify(generateBiomeJson(), null, 2);
+  }
 }
