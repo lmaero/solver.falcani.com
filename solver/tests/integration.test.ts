@@ -3,7 +3,11 @@ import { executeInit } from "../src/commands/init.js";
 import { executeDoctor } from "../src/commands/doctor.js";
 import { executeUninstall } from "../src/commands/uninstall.js";
 import { compareFrameworkFiles } from "../src/commands/update.js";
-import { mkdtemp, rm, readFile, mkdir } from "node:fs/promises";
+import { executeScan } from "../src/commands/scan.js";
+import { executeAudit } from "../src/commands/audit.js";
+import { executeReport } from "../src/commands/report.js";
+import { executeMigrate } from "../src/commands/migrate.js";
+import { mkdtemp, rm, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileExists } from "../src/utils/files.js";
@@ -104,5 +108,39 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
     const diffs = await compareFrameworkFiles(tempDir, "ts");
     const missing = diffs.filter((d) => d.status === "missing");
     expect(missing.length).toBeGreaterThan(0);
+  });
+
+  it("solver scan produces a report with architecture placeholder", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(join(tempDir, "src", "app.ts"), "const x = 1;");
+    const scanResult = await executeScan(tempDir);
+    expect(scanResult.reportPath).toContain("solver-scan");
+    const content = await readFile(scanResult.reportPath, "utf-8");
+    expect(content).toContain("Architecture Overview");
+  });
+
+  it("solver audit produces a scorecard", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(join(tempDir, "src", "app.ts"), "export const x = 1;");
+    const auditResult = await executeAudit(tempDir);
+    expect(auditResult.scorecard).toBeDefined();
+    expect(auditResult.consoleViolations).toBe(0);
+  });
+
+  it("solver report produces a field report", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(join(tempDir, "src", "app.ts"), "export const x = 1;");
+    const reportResult = await executeReport(tempDir);
+    expect(reportResult.reportPath).toContain("solver-report");
+  });
+
+  it("solver migrate produces a migration assessment", async () => {
+    await writeFile(join(tempDir, "package.json"), JSON.stringify({
+      dependencies: { react: "^19.0.0" }
+    }));
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(join(tempDir, "src", "app.ts"), "const x = 1;");
+    const migrateResult = await executeMigrate(tempDir);
+    expect(migrateResult.reportPath).toContain("solver-migrate");
   });
 });

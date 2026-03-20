@@ -16,16 +16,16 @@ solver init --ecosystem ts
 
 ## Commands
 
-| Command | Description | Status |
-|---------|-------------|--------|
-| `solver init` | Scaffold framework files into a project | Available |
-| `solver doctor` | Check project health against framework standards | Available |
-| `solver update` | Compare framework files against latest templates | Available |
-| `solver uninstall` | Remove framework files, keep ecosystem files | Available |
-| `solver scan` | Scan codebase for pattern violations | Coming soon |
-| `solver audit` | Full codebase audit against framework standards | Coming soon |
-| `solver migrate` | Migrate between framework versions | Coming soon |
-| `solver report` | Generate project health report | Coming soon |
+| Command | Description |
+|---------|-------------|
+| `solver init [--ecosystem ts\|cpp]` | Scaffold framework into any project |
+| `solver scan` | Analyze codebase and generate scan report |
+| `solver audit` | Run phase completion checks and display scorecard |
+| `solver doctor` | Verify framework installation health |
+| `solver migrate` | Generate migration assessment for existing codebase |
+| `solver report` | Generate a structured field report |
+| `solver update` | Compare framework files against latest and show diffs |
+| `solver uninstall` | Clean removal of framework files |
 
 ## Ecosystems
 
