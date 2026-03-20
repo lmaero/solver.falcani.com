@@ -307,6 +307,13 @@ export async function detectMissingDependencies(
       continue;
     }
 
+    // Skip files that contain import statements as string literals, not actual
+    // project imports: template generators (code generation) and analysis modules
+    // (pattern detection like checking for "from 'pino'" in source files)
+    if (relativePath.includes("templates/") || relativePath.includes("analysis/")) {
+      continue;
+    }
+
     const fullPath = join(projectRoot, relativePath);
     try {
       const content = await readFile(fullPath, "utf-8");
