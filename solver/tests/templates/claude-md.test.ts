@@ -65,6 +65,14 @@ describe("generateClaudeMd", () => {
     expect(content).toContain("comments explain WHY");
   });
 
+  it("contains scope classifier with OpenSpec fast-path", () => {
+    expect(content).toContain("scope classifier");
+    expect(content).toContain("Trivial");
+    expect(content).toContain("Standard");
+    expect(content).toContain("Architectural");
+    expect(content).toContain("OpenSpec");
+  });
+
   it("contains conventional commits", () => {
     expect(content).toContain("feat:");
     expect(content).toContain("fix:");
