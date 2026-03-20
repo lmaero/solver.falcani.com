@@ -10,6 +10,7 @@ export interface DoctorReport {
   hooks: "ok" | "missing";
   skills: "ok" | "missing" | "incomplete";
   biome: "ok" | "missing";
+  biomeConfig: "ok" | "misconfigured" | "missing";
   openspec: "ok" | "missing";
   healthy: boolean;
 }
@@ -23,6 +24,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     hooks: "missing",
     skills: "missing",
     biome: "missing",
+    biomeConfig: "missing",
     openspec: "missing",
     healthy: false,
   };
@@ -100,9 +102,27 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
   }
 
   // 5. Check biome.json
-  if (await fileExists(join(projectRoot, "biome.json"))) {
+  const biomePath = join(projectRoot, "biome.json");
+  if (await fileExists(biomePath)) {
     report.biome = "ok";
     success("biome.json exists");
+
+    // 5b. Verify biome.json has noConsole rule set to "error"
+    try {
+      const biomeContent = await readFile(biomePath, "utf-8");
+      const biomeConfig = JSON.parse(biomeContent);
+      const noConsole = biomeConfig?.linter?.rules?.suspicious?.noConsole;
+      if (noConsole === "error") {
+        report.biomeConfig = "ok";
+        success("biome.json noConsole rule is active");
+      } else {
+        report.biomeConfig = "misconfigured";
+        warn("biome.json noConsole rule is missing or not set to \"error\"");
+      }
+    } catch {
+      report.biomeConfig = "misconfigured";
+      warn("biome.json could not be parsed for config verification");
+    }
   } else {
     warn("biome.json is missing — run `solver init` to create it");
   }
@@ -122,6 +142,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     report.hooks === "ok" &&
     report.skills === "ok" &&
     report.biome === "ok" &&
+    report.biomeConfig === "ok" &&
     report.openspec === "ok";
 
   heading(report.healthy ? "all checks passed" : "some checks failed");

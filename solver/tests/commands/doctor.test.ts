@@ -77,4 +77,27 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
     // This test verifies the field exists in the report
     expect(["ok", "missing"]).toContain(report.openspec);
   });
+
+  it("reports biomeConfig ok when noConsole is error", async () => {
+    const report = await executeDoctor(tempDir);
+    // Fresh init creates biome.json with noConsole: "error"
+    expect(report.biomeConfig).toBe("ok");
+  });
+
+  it("reports biomeConfig misconfigured when noConsole is missing", async () => {
+    await writeFile(
+      join(tempDir, "biome.json"),
+      JSON.stringify({ linter: { enabled: true, rules: { recommended: true } } }),
+    );
+    const report = await executeDoctor(tempDir);
+    expect(report.biomeConfig).toBe("misconfigured");
+    expect(report.healthy).toBe(false);
+  });
+
+  it("reports biomeConfig missing when biome.json does not exist", async () => {
+    const { unlink } = await import("node:fs/promises");
+    await unlink(join(tempDir, "biome.json"));
+    const report = await executeDoctor(tempDir);
+    expect(report.biomeConfig).toBe("missing");
+  });
 });
