@@ -147,6 +147,13 @@ export function formatBrokenSection(
     }
   }
 
+  if (data.missingDependencies.length > 0) {
+    items.push(`- **Missing dependencies:** ${data.missingDependencies.length} package${data.missingDependencies.length !== 1 ? "s" : ""} imported in source but not declared in package.json`);
+    for (const pkg of data.missingDependencies) {
+      items.push(`  - ${pkg}`);
+    }
+  }
+
   if (data.largeFiles.length > 0) {
     items.push(`- **Large files (over 400 lines):** ${data.largeFiles.length} file${data.largeFiles.length !== 1 ? "s" : ""} exceed${data.largeFiles.length === 1 ? "s" : ""} the threshold`);
     for (const file of data.largeFiles) {
@@ -160,7 +167,7 @@ export function formatBrokenSection(
   }
 
   if (items.length === 0) {
-    return "No broken patterns detected. Console usage is clean, no oversized files, and test coverage meets the 50% threshold.";
+    return "No broken patterns detected. Console usage is clean, no missing dependencies, no oversized files, and test coverage meets the 50% threshold.";
   }
 
   return items.join("\n");
@@ -197,13 +204,19 @@ export function formatNextSteps(
   const steps: string[] = [];
   let priority = 1;
 
-  // console.log is highest priority — it's a hard rule violation
+  // Missing dependencies is highest priority — build is broken
+  if (auditResult.missingDependencies.length > 0) {
+    steps.push(`${priority}. **Install missing dependencies** — ${auditResult.missingDependencies.length} package${auditResult.missingDependencies.length !== 1 ? "s" : ""} imported but not declared: ${auditResult.missingDependencies.join(", ")}.`);
+    priority++;
+  }
+
+  // console.log is second priority — it's a hard rule violation
   if (auditResult.consoleViolations > 0) {
     steps.push(`${priority}. **Replace console.log with structured logging** — ${auditResult.consoleViolations} violation${auditResult.consoleViolations !== 1 ? "s" : ""} in production code. Use Pino or the project's configured logger.`);
     priority++;
   }
 
-  // Missing infrastructure is second priority
+  // Missing infrastructure is third priority
   if (!data.hasStructuredLogging) {
     steps.push(`${priority}. **Add structured logging** — set up Pino (or equivalent) and create lib/logger.ts.`);
     priority++;

@@ -98,4 +98,35 @@ describe("runAuditChecks", () => {
     const result = await runAuditChecks(tempDir);
     expect(result.hasOpenSpec).toBe(true);
   });
+
+  it("detects missing dependencies and fails audit", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const result = await runAuditChecks(tempDir);
+    expect(result.missingDependencies).toContain("react");
+    expect(result.passing).toBe(false);
+    expect(result.scorecard).toContain("Missing dependencies");
+  });
+
+  it("passes audit when all dependencies are declared", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: { react: "^19.0.0" }, devDependencies: {} }),
+    );
+    const result = await runAuditChecks(tempDir);
+    expect(result.missingDependencies).toHaveLength(0);
+    expect(result.passing).toBe(true);
+  });
 });

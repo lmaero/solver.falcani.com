@@ -6,6 +6,8 @@ export interface AuditResult {
   consoleViolations: number;
   consoleViolationFiles: string[];
   largeFiles: { path: string; lines: number }[];
+  missingDependencies: string[];
+  biomeNoConsole: "active" | "missing";
   testCoverageRatio: number;
   sourceFileCount: number;
   testFileCount: number;
@@ -169,6 +171,17 @@ function formatScorecard(result: Omit<AuditResult, "scorecard" | "passing">): st
   const largeFilesValue = `${largeFileCount}`;
   lines.push(`${largeFilesLabel.padEnd(35)}${largeFilesValue.padEnd(20)}${largeFilesStatus}`);
 
+  const missingDepCount = result.missingDependencies.length;
+  const missingDepStatus = missingDepCount === 0 ? "\u2713" : "\u2717";
+  const missingDepLabel = "Missing dependencies:";
+  const missingDepValue = missingDepCount === 0 ? "none" : `${missingDepCount} package${missingDepCount !== 1 ? "s" : ""}`;
+  lines.push(`${missingDepLabel.padEnd(35)}${missingDepValue.padEnd(20)}${missingDepStatus}`);
+
+  const biomeStatus = result.biomeNoConsole === "active" ? "\u2713" : "\u26A0";
+  const biomeLabel = "Biome noConsole rule:";
+  const biomeValue = result.biomeNoConsole;
+  lines.push(`${biomeLabel.padEnd(35)}${biomeValue.padEnd(20)}${biomeStatus}`);
+
   const openSpecStatus = result.hasOpenSpec ? "\u2713" : "\u26A0";
   const openSpecLabel = "OpenSpec initialized:";
   const openSpecValue = result.hasOpenSpec ? "yes" : "no";
@@ -177,16 +190,35 @@ function formatScorecard(result: Omit<AuditResult, "scorecard" | "passing">): st
   return lines.join("\n");
 }
 
+export async function checkBiomeNoConsole(projectRoot: string): Promise<"active" | "missing"> {
+  const biomePath = join(projectRoot, "biome.json");
+  try {
+    const content = await readFile(biomePath, "utf-8");
+    const config = JSON.parse(content);
+    const noConsole = config?.linter?.rules?.suspicious?.noConsole;
+    return noConsole === "error" ? "active" : "missing";
+  } catch {
+    return "missing";
+  }
+}
+
 export async function runAuditChecks(projectRoot: string): Promise<AuditResult> {
   const projectData = await collectProjectData(projectRoot);
 
-  const { count: consoleViolations, files: consoleViolationFiles } =
-    await detectConsoleViolations(projectRoot);
+  const [
+    { count: consoleViolations, files: consoleViolationFiles },
+    biomeNoConsole,
+  ] = await Promise.all([
+    detectConsoleViolations(projectRoot),
+    checkBiomeNoConsole(projectRoot),
+  ]);
 
   const partialResult = {
     consoleViolations,
     consoleViolationFiles,
     largeFiles: projectData.largeFiles,
+    missingDependencies: projectData.missingDependencies,
+    biomeNoConsole,
     testCoverageRatio: projectData.testCoverageRatio,
     sourceFileCount: projectData.sourceFileCount,
     testFileCount: projectData.testFileCount,
@@ -194,7 +226,7 @@ export async function runAuditChecks(projectRoot: string): Promise<AuditResult> 
   };
 
   const scorecard = formatScorecard(partialResult);
-  const passing = consoleViolations === 0;
+  const passing = consoleViolations === 0 && projectData.missingDependencies.length === 0;
 
   return {
     ...partialResult,

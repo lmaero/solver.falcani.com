@@ -26,6 +26,7 @@ export interface ProjectData {
   hasStructuredLogging: boolean;
   hasEnvValidation: boolean;
   hasErrorBoundaries: boolean;
+  missingDependencies: string[];
 }
 
 const EXCLUDED_DIRS = new Set([
@@ -221,6 +222,120 @@ async function detectErrorBoundariesInFiles(
   return false;
 }
 
+const NODE_BUILTINS = new Set([
+  "assert", "async_hooks", "buffer", "child_process", "cluster",
+  "console", "constants", "crypto", "dgram", "diagnostics_channel",
+  "dns", "domain", "events", "fs", "http", "http2", "https",
+  "inspector", "module", "net", "os", "path", "perf_hooks",
+  "process", "punycode", "querystring", "readline", "repl",
+  "stream", "string_decoder", "sys", "timers", "tls", "trace_events",
+  "tty", "url", "util", "v8", "vm", "wasi", "worker_threads", "zlib",
+]);
+
+const IMPORT_PATTERN = /(?:import\s+(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']|require\s*\(\s*["']([^"']+)["']\s*\))/g;
+
+function extractPackageName(specifier: string): string | null {
+  // Ignore relative imports
+  if (specifier.startsWith("./") || specifier.startsWith("../")) {
+    return null;
+  }
+
+  // Ignore Node.js builtins with node: prefix
+  if (specifier.startsWith("node:")) {
+    return null;
+  }
+
+  // Ignore TypeScript path aliases (@ without scope, ~, #)
+  if (specifier.startsWith("~/") || specifier.startsWith("#")) {
+    return null;
+  }
+
+  // Scoped packages: @scope/name or @scope/name/subpath
+  if (specifier.startsWith("@")) {
+    // Must have a slash after the scope to be a valid scoped package
+    const parts = specifier.split("/");
+    if (parts.length < 2) {
+      return null;
+    }
+    // TypeScript path alias like @/lib/db
+    if (parts[0] === "@") {
+      return null;
+    }
+    return `${parts[0]}/${parts[1]}`;
+  }
+
+  // Unscoped packages: name or name/subpath
+  const name = specifier.split("/")[0];
+
+  // Check if it's a Node.js builtin
+  if (NODE_BUILTINS.has(name)) {
+    return null;
+  }
+
+  return name;
+}
+
+export async function detectMissingDependencies(
+  projectRoot: string,
+): Promise<string[]> {
+  const packageJsonPath = join(projectRoot, "package.json");
+  const hasPackageJson = await fileExists(packageJsonPath);
+
+  if (!hasPackageJson) {
+    return [];
+  }
+
+  let declaredDeps: Set<string>;
+  try {
+    const packageJson = JSON.parse(await readFile(packageJsonPath, "utf-8"));
+    declaredDeps = new Set([
+      ...Object.keys(packageJson.dependencies ?? {}),
+      ...Object.keys(packageJson.devDependencies ?? {}),
+    ]);
+  } catch {
+    return [];
+  }
+
+  const files: string[] = [];
+  await walkDirectory(projectRoot, projectRoot, files);
+
+  const importedPackages = new Set<string>();
+
+  for (const relativePath of files) {
+    const ext = extname(relativePath);
+    if (!SOURCE_EXTENSIONS.has(ext)) {
+      continue;
+    }
+
+    const fullPath = join(projectRoot, relativePath);
+    try {
+      const content = await readFile(fullPath, "utf-8");
+      let match: RegExpExecArray | null;
+
+      // Reset regex state
+      IMPORT_PATTERN.lastIndex = 0;
+      while ((match = IMPORT_PATTERN.exec(content)) !== null) {
+        const specifier = match[1] ?? match[2];
+        const packageName = extractPackageName(specifier);
+        if (packageName) {
+          importedPackages.add(packageName);
+        }
+      }
+    } catch {
+      // Skip unreadable files
+    }
+  }
+
+  const missing: string[] = [];
+  for (const pkg of importedPackages) {
+    if (!declaredDeps.has(pkg)) {
+      missing.push(pkg);
+    }
+  }
+
+  return missing.sort();
+}
+
 export async function collectProjectData(
   projectRoot: string,
 ): Promise<ProjectData> {
@@ -300,6 +415,7 @@ export async function collectProjectData(
   const hasErrorBoundaries = await detectErrorBoundariesInFiles(files);
 
   const testCoverageRatio = sourceFileCount > 0 ? testFileCount / sourceFileCount : 0;
+  const missingDependencies = await detectMissingDependencies(projectRoot);
 
   return {
     projectRoot,
@@ -320,6 +436,7 @@ export async function collectProjectData(
     hasStructuredLogging,
     hasEnvValidation,
     hasErrorBoundaries,
+    missingDependencies,
   };
 }
 

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { collectProjectData } from "../../src/analysis/collector.js";
+import { collectProjectData, detectMissingDependencies } from "../../src/analysis/collector.js";
 
 describe("collectProjectData", () => {
   let tempDir: string;
@@ -148,5 +148,142 @@ describe("collectProjectData", () => {
     await writeFile(join(tempDir, "tests", "a.test.ts"), "test('a', () => {});");
     const data = await collectProjectData(tempDir);
     expect(data.testCoverageRatio).toBeCloseTo(0.5);
+  });
+
+  it("includes missingDependencies in project data", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const data = await collectProjectData(tempDir);
+    expect(data.missingDependencies).toContain("react");
+  });
+});
+
+describe("detectMissingDependencies", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), "solver-deps-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true });
+  });
+
+  it("detects missing package imported in source but not in package.json", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toContain("react");
+  });
+
+  it("ignores Node.js builtin modules", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import { join } from "node:path";\nimport fs from "fs";\nimport { createHash } from "crypto";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toHaveLength(0);
+  });
+
+  it("ignores relative imports", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import { helper } from "./utils";\nimport { other } from "../lib/other";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toHaveLength(0);
+  });
+
+  it("returns empty array when all imports are satisfied", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\nimport { z } from "zod";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({
+        dependencies: { react: "^19.0.0" },
+        devDependencies: { zod: "^3.0.0" },
+      }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toHaveLength(0);
+  });
+
+  it("handles scoped packages correctly", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import { Button } from "@react-email/components";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toContain("@react-email/components");
+  });
+
+  it("handles require() syntax", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.js"),
+      'const express = require("express");\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toContain("express");
+  });
+
+  it("returns empty array when no package.json exists", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import React from "react";\n',
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toHaveLength(0);
+  });
+
+  it("ignores TypeScript path aliases", async () => {
+    await mkdir(join(tempDir, "src"), { recursive: true });
+    await writeFile(
+      join(tempDir, "src", "app.ts"),
+      'import { db } from "@/lib/db";\nimport { auth } from "~/auth";\nimport { config } from "#config";\n',
+    );
+    await writeFile(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: {}, devDependencies: {} }),
+    );
+    const missing = await detectMissingDependencies(tempDir);
+    expect(missing).toHaveLength(0);
   });
 });
