@@ -4,6 +4,7 @@ import { executeInit } from "../../src/commands/init.js";
 import { mkdtemp, rm, unlink, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { fileExists } from "../../src/utils/files.js";
 
 describe("executeDoctor", { timeout: 60_000 }, () => {
   let tempDir: string;
@@ -22,6 +23,7 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
     expect(report.claudeMd).toBe("ok");
     expect(report.settings).toBe("ok");
     expect(report.hooks).toBe("ok");
+    expect(report.skills).toBe("ok");
     expect(report.biome).toBe("ok");
     expect(report.healthy).toBe(true);
   });
@@ -51,6 +53,21 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
     await rm(join(tempDir, ".claude", "hooks"), { recursive: true });
     const report = await executeDoctor(tempDir);
     expect(report.hooks).toBe("missing");
+    expect(report.healthy).toBe(false);
+  });
+
+  it("reports missing skills when skills directory is removed", async () => {
+    await rm(join(tempDir, ".claude", "skills"), { recursive: true });
+    const report = await executeDoctor(tempDir);
+    expect(report.skills).toBe("missing");
+    expect(report.healthy).toBe(false);
+  });
+
+  it("reports incomplete skills when some skill files are missing", async () => {
+    await rm(join(tempDir, ".claude", "skills", "logging"), { recursive: true });
+    await rm(join(tempDir, ".claude", "skills", "discovery"), { recursive: true });
+    const report = await executeDoctor(tempDir);
+    expect(report.skills).toBe("incomplete");
     expect(report.healthy).toBe(false);
   });
 

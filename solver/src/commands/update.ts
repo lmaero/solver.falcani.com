@@ -8,6 +8,7 @@ import { generateSettingsJson } from "../templates/settings-json.js";
 import { generatePostWriteHook } from "../templates/hooks/post-write.js";
 import { generatePostTestHook } from "../templates/hooks/post-test.js";
 import { generateSessionEndHook } from "../templates/hooks/session-end.js";
+import { getAllSkillGenerators } from "../templates/skills/index.js";
 
 export interface FileDiff {
   file: string;
@@ -28,6 +29,11 @@ export async function compareFrameworkFiles(
   projectRoot: string,
   ecosystem: Ecosystem,
 ): Promise<FileDiff[]> {
+  const skillFiles = getAllSkillGenerators().map(({ dirName, generate }) => ({
+    relativePath: `.claude/skills/${dirName}/SKILL.md`,
+    generate,
+  }));
+
   const frameworkFiles: Array<{ relativePath: string; generate: () => string }> = [
     { relativePath: "CLAUDE.md", generate: generateClaudeMd },
     { relativePath: ".claude/settings.json", generate: generateSettingsJson },
@@ -43,6 +49,7 @@ export async function compareFrameworkFiles(
       relativePath: ".claude/hooks/session-end.sh",
       generate: () => generateSessionEndHook(ecosystem),
     },
+    ...skillFiles,
   ];
 
   const diffs: FileDiff[] = [];

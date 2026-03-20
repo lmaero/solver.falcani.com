@@ -41,6 +41,10 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
     expect(await fileExists(join(tempDir, ".claude", "hooks", "post-test.sh"))).toBe(true);
     expect(await fileExists(join(tempDir, ".claude", "hooks", "session-end.sh"))).toBe(true);
 
+    // Verify skills were created
+    expect(await fileExists(join(tempDir, ".claude", "skills", "action-patterns", "SKILL.md"))).toBe(true);
+    expect(await fileExists(join(tempDir, ".claude", "skills", "logging", "SKILL.md"))).toBe(true);
+
     // --- Doctor ---
     // OpenSpec may or may not have initialized via npx, so ensure it exists
     // for a deterministic doctor check
@@ -50,6 +54,7 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
     expect(doctorReport.claudeMd).toBe("ok");
     expect(doctorReport.settings).toBe("ok");
     expect(doctorReport.hooks).toBe("ok");
+    expect(doctorReport.skills).toBe("ok");
     expect(doctorReport.biome).toBe("ok");
     expect(doctorReport.openspec).toBe("ok");
     expect(doctorReport.healthy).toBe(true);

@@ -19,6 +19,7 @@ import { generateBiomeJson } from "../templates/ecosystem/typescript/biome-json.
 import { generateVitestConfig } from "../templates/ecosystem/typescript/vitest-config.js";
 import { generateLoggerModule } from "../templates/ecosystem/typescript/logger.js";
 import { generateRecommendations } from "../templates/recommendations.js";
+import { getAllSkillGenerators } from "../templates/skills/index.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -56,6 +57,24 @@ export async function executeInit(
   // 2. Create .claude/ directories
   await ensureDir(join(projectRoot, ".claude", "hooks"));
   await ensureDir(join(projectRoot, ".claude", "skills"));
+
+  // 2b. Install pattern-based skills
+  const skillGenerators = getAllSkillGenerators();
+  for (const { dirName, generate } of skillGenerators) {
+    const skillDir = join(projectRoot, ".claude", "skills", dirName);
+    await ensureDir(skillDir);
+    const skillResult = await writeFileIfNotExists(
+      join(skillDir, "SKILL.md"),
+      generate(),
+    );
+    if (skillResult.action === "conflict") {
+      warn(
+        `Skill ${dirName}/SKILL.md already exists with different content — keeping existing`,
+      );
+      conflicts.push(`.claude/skills/${dirName}/SKILL.md`);
+    }
+  }
+  success(`Installed ${skillGenerators.length} pattern-based skills`);
 
   // 3. Create or merge .claude/settings.json
   const settingsResult = await writeFileIfNotExists(

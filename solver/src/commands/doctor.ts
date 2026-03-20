@@ -1,12 +1,14 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "../utils/files.js";
 import { success, warn, error, heading } from "../utils/output.js";
+import { getAllSkillGenerators } from "../templates/skills/index.js";
 
 export interface DoctorReport {
   claudeMd: "ok" | "missing";
   settings: "ok" | "missing" | "invalid";
   hooks: "ok" | "missing";
+  skills: "ok" | "missing" | "incomplete";
   biome: "ok" | "missing";
   openspec: "ok" | "missing";
   healthy: boolean;
@@ -19,6 +21,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     claudeMd: "missing",
     settings: "missing",
     hooks: "missing",
+    skills: "missing",
     biome: "missing",
     openspec: "missing",
     healthy: false,
@@ -66,7 +69,37 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     );
   }
 
-  // 4. Check biome.json
+  // 4. Check .claude/skills/ directory with skill files
+  const expectedSkills = getAllSkillGenerators().map((g) => g.dirName);
+  const skillsDir = join(projectRoot, ".claude", "skills");
+
+  if (await fileExists(skillsDir)) {
+    const skillChecks = await Promise.all(
+      expectedSkills.map((skill) =>
+        fileExists(join(skillsDir, skill, "SKILL.md")),
+      ),
+    );
+    const presentCount = skillChecks.filter(Boolean).length;
+
+    if (presentCount === expectedSkills.length) {
+      report.skills = "ok";
+      success(`.claude/skills/ has all ${expectedSkills.length} skill files`);
+    } else if (presentCount > 0) {
+      report.skills = "incomplete";
+      const missingSkills = expectedSkills.filter((_, i) => !skillChecks[i]);
+      warn(
+        `.claude/skills/ is missing: ${missingSkills.join(", ")} — run \`solver init\` to create them`,
+      );
+    } else {
+      warn(
+        ".claude/skills/ directory exists but has no skill files — run `solver init` to create them",
+      );
+    }
+  } else {
+    warn(".claude/skills/ is missing — run `solver init` to create it");
+  }
+
+  // 5. Check biome.json
   if (await fileExists(join(projectRoot, "biome.json"))) {
     report.biome = "ok";
     success("biome.json exists");
@@ -74,7 +107,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     warn("biome.json is missing — run `solver init` to create it");
   }
 
-  // 5. Check openspec/
+  // 6. Check openspec/
   if (await fileExists(join(projectRoot, "openspec"))) {
     report.openspec = "ok";
     success("openspec/ directory exists");
@@ -87,6 +120,7 @@ export async function executeDoctor(projectRoot: string): Promise<DoctorReport> 
     report.claudeMd === "ok" &&
     report.settings === "ok" &&
     report.hooks === "ok" &&
+    report.skills === "ok" &&
     report.biome === "ok" &&
     report.openspec === "ok";
 
