@@ -1,0 +1,28 @@
+export function generateSettingsJson(): string {
+  const settings = {
+    permissions: {
+      allow: [
+        "Bash(git *)",
+        "Bash(pnpm *)",
+        "Bash(biome *)",
+        "Bash(vitest *)",
+        "Bash(tsc *)",
+        "Bash(node *)",
+        "Bash(curl *)",
+        "Bash(ls *)",
+        "Bash(grep *)",
+        "Bash(find *)",
+        "Bash(wc *)",
+        "Bash(mkdir *)",
+        "Bash(cp *)",
+        "Bash(mv *)",
+        "Bash(rm *)",
+        "Bash(echo *)",
+        "Bash(touch *)",
+      ],
+      deny: ["Bash(sudo *)", "Bash(ssh *)", "Bash(npm *)", "Bash(yarn *)"],
+    },
+  };
+
+  return JSON.stringify(settings, null, 2);
+}
