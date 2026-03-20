@@ -1,19 +1,26 @@
 {
-  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
   "files": {
-    "includes": ["src/**", "tests/**"]
+    "includes": [
+      "src/**",
+      "tests/**"
+    ]
   },
   "linter": {
     "enabled": true,
     "rules": {
       "suspicious": {
         "noConsole": "error"
-      }
+      },
+      "recommended": true
     }
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2
+  },
+  "organizeImports": {
+    "enabled": true
   }
 }

@@ -1,8 +1,8 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-interface FileResult {
-  action: "created" | "skipped" | "conflict" | "merged";
+export interface FileResult {
+  action: "created" | "skipped" | "conflict" | "merged" | "overwritten";
   diff?: string;
 }
 
@@ -24,6 +24,15 @@ export async function writeFileIfNotExists(
     await writeFile(filePath, content);
     return { action: "created" };
   }
+}
+
+export async function overwriteFile(
+  filePath: string,
+  content: string,
+): Promise<FileResult> {
+  await mkdir(dirname(filePath), { recursive: true });
+  await writeFile(filePath, content);
+  return { action: "overwritten" };
 }
 
 export async function mergeJsonFile(

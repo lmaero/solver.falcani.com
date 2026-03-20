@@ -11,7 +11,7 @@ describe("executeDoctor", { timeout: 60_000 }, () => {
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), "solver-doctor-"));
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
   });
 
   afterEach(async () => {

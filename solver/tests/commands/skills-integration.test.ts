@@ -16,7 +16,7 @@ describe("skills integration", { timeout: 60_000 }, () => {
   });
 
   it("solver init creates 8 skill directories", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
     const skillDirs = await readdir(join(tempDir, ".claude", "skills"));
     // Filter out any openspec-related entries that may exist
     const solverSkills = skillDirs.filter((d) => !d.startsWith("openspec"));
@@ -24,7 +24,7 @@ describe("skills integration", { timeout: 60_000 }, () => {
   });
 
   it("each skill directory contains a SKILL.md file", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
     const expectedSkills = [
       "action-patterns",
       "data-access-patterns",
@@ -44,7 +44,7 @@ describe("skills integration", { timeout: 60_000 }, () => {
   });
 
   it("skill files have correct YAML frontmatter", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
     const skillFile = join(
       tempDir,
       ".claude",
@@ -59,8 +59,8 @@ describe("skills integration", { timeout: 60_000 }, () => {
   });
 
   it("running init twice does not create conflicts for skills", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
-    const secondRun = await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
+    const secondRun = await executeInit(tempDir, { ecosystem: "ts" }, false);
     // Skills should be idempotent — no conflicts on second run
     expect(secondRun.conflicts).toHaveLength(0);
   });

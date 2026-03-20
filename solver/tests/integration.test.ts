@@ -25,7 +25,7 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
 
   it("completes full lifecycle without errors", async () => {
     // --- Init ---
-    const initResult = await executeInit(tempDir, { ecosystem: "ts" });
+    const initResult = await executeInit(tempDir, { ecosystem: "ts" }, false);
     expect(initResult.conflicts).toHaveLength(0);
 
     // Verify CLAUDE.md content is framework-agnostic
@@ -85,13 +85,13 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
   });
 
   it("init is idempotent — running twice produces no conflicts", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
-    const secondRun = await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
+    const secondRun = await executeInit(tempDir, { ecosystem: "ts" }, false);
     expect(secondRun.conflicts).toHaveLength(0);
   });
 
   it("doctor detects missing files after uninstall", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
     await executeUninstall(tempDir);
 
     const report = await executeDoctor(tempDir);
@@ -102,7 +102,7 @@ describe("full lifecycle: init -> doctor -> update -> uninstall", { timeout: 120
   });
 
   it("update detects missing files after uninstall", async () => {
-    await executeInit(tempDir, { ecosystem: "ts" });
+    await executeInit(tempDir, { ecosystem: "ts" }, false);
     await executeUninstall(tempDir);
 
     const diffs = await compareFrameworkFiles(tempDir, "ts");
