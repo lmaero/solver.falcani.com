@@ -182,6 +182,16 @@ Every test follows the same three-step structure:
 2. **Act**: execute the function or operation being tested
 3. **Assert**: verify the result matches expectations
 
+## Visual verification after refactoring
+
+After splitting components, extracting modules, or any refactor that changes file boundaries without changing behavior:
+
+- Run the dev server and visually check the affected routes at desktop and mobile widths
+- If the project has screenshot tests or visual regression tools, run them
+- If neither is available, tell the human: "This refactor needs visual verification at [list of affected routes]. I can't verify visual output — please check these pages."
+
+The framework cannot verify visual output. Acknowledging this limitation explicitly is better than claiming the refactor is "verified" based on a passing build.
+
 ## Checklist
 
 - [ ] Business rules, domain logic, mutations, permissions, and data transformations have TDD tests
@@ -191,3 +201,4 @@ Every test follows the same three-step structure:
 - [ ] External dependencies are mocked at boundaries, not internally
 - [ ] Test names describe the scenario and expected outcome
 - [ ] Tests follow Arrange-Act-Assert structure
+- [ ] Refactors that change file boundaries include visual verification or an explicit request for human review

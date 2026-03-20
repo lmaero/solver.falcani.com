@@ -59,6 +59,13 @@ Mutations return a typed result that distinguishes success from failure. The eco
 
 External-facing endpoints use a consistent envelope. Success: `{ data, meta? }`. Failure: `{ error: { code, message, details? } }`. Internal mutations use the typed result pattern above; the envelope is for HTTP boundaries.
 
+## scope classifier
+
+Before starting work, classify the scope:
+- **Trivial** (fix against a known standard, <3 files, <10 lines changed) — commit directly with a conventional commit message. No OpenSpec change needed.
+- **Standard** (single feature or fix, clear requirements) — use the full OpenSpec cycle: propose → apply → verify → archive.
+- **Architectural** (changes system behavior, multiple domains, new patterns) — requires human approval before proposing.
+
 ## conventional commits
 
 Always use conventional commits: feat:, fix:, chore:, docs:. Never add AI attribution to commits — git history must be clean and attributable to the team.
